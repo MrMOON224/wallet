@@ -1,0 +1,447 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Phantom Prank Wallet</title>
+    <style>
+        :root {
+            --primary: #7e64ff;
+            --background: #0f0f12;
+            --card-bg: #1a1a1f;
+            --text-secondary: #86868d;
+            --green: #32D74B;
+            --red: #FF453A;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+        }
+
+        body {
+            background: var(--background);
+            color: white;
+            min-height: 100vh;
+            padding: 0;
+        }
+
+        .navbar {
+            background: var(--card-bg);
+            padding: 16px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid #2d2d35;
+        }
+
+        .navbar .logo {
+            font-size: 20px;
+            font-weight: 600;
+            color: white;
+        }
+
+        .navbar .user {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .navbar .user img {
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+        }
+
+        .container {
+            max-width: 400px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .wallet-card {
+            background: var(--card-bg);
+            border-radius: 16px;
+            padding: 24px;
+            margin-bottom: 20px;
+            box-shadow: 0 8px 16px rgba(0,0,0,0.15);
+        }
+
+        .balance {
+            font-size: 32px;
+            font-weight: 600;
+            color: white;
+            text-align: center;
+            margin: 24px 0;
+        }
+
+        .button-group {
+            display: flex;
+            gap: 12px;
+            justify-content: center;
+            margin: 24px 0;
+        }
+
+        button {
+            background: linear-gradient(45deg, var(--primary), #a869ff);
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            color: white;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s, opacity 0.2s;
+        }
+
+        button:hover {
+            opacity: 0.9;
+            transform: translateY(-1px);
+        }
+
+        .address-container {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            background: #2d2d35;
+            padding: 12px;
+            border-radius: 8px;
+            margin: 16px 0;
+            font-size: 14px;
+        }
+
+        .address {
+            word-break: break-all;
+            color: var(--text-secondary);
+        }
+
+        .copy-btn {
+            background: none;
+            border: 1px solid #3d3d45;
+            padding: 6px 12px;
+            border-radius: 6px;
+            font-size: 12px;
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.6);
+            justify-content: center;
+            align-items: center;
+            backdrop-filter: blur(4px);
+            animation: fadeIn 0.3s ease-in-out;
+        }
+
+        @keyframes fadeIn {
+            0% { opacity: 0; }
+            100% { opacity: 1; }
+        }
+
+        .modal-content {
+            background: var(--card-bg);
+            padding: 24px;
+            border-radius: 16px;
+            width: 90%;
+            max-width: 400px;
+            position: relative;
+        }
+
+        input {
+            width: 100%;
+            padding: 12px;
+            margin: 12px 0;
+            background: #2d2d35;
+            border: 1px solid #3d3d45;
+            border-radius: 8px;
+            color: white;
+            font-size: 14px;
+        }
+
+        .qr-code {
+            width: 180px;
+            height: 180px;
+            background: #fff;
+            margin: 20px auto;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #000;
+        }
+
+        .crypto-prices {
+            background: var(--card-bg);
+            padding: 16px;
+            border-radius: 16px;
+            margin-top: 20px;
+        }
+
+        .crypto-prices h3 {
+            margin-bottom: 12px;
+            font-size: 16px;
+        }
+
+        .crypto-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 8px 0;
+            border-bottom: 1px solid #2d2d35;
+            border-radius: 8px;
+            margin-bottom: 10px;
+        }
+
+        .crypto-item:last-child {
+            border-bottom: none;
+        }
+
+        .crypto-item img {
+            width: 24px;
+            height: 24px;
+            margin-right: 12px;
+        }
+
+        .crypto-item span {
+            font-size: 14px;
+        }
+
+        .login-page {
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+        }
+
+        .login-page input {
+            width: 100%;
+            max-width: 300px;
+        }
+
+        .login-page button {
+            width: 100%;
+            max-width: 300px;
+        }
+
+        .login-page .account-option {
+            text-align: center;
+        }
+
+        .login-page .account-option a {
+            color: var(--primary);
+            text-decoration: none;
+            font-weight: 600;
+        }
+    </style>
+</head>
+<body>
+    <!-- Navbar -->
+    <div class="navbar">
+        <div class="logo">Phantom</div>
+        <div class="user" id="userInfo" style="display: none;">
+            <img src="https://via.placeholder.com/24" alt="User">
+            <span id="username"></span>
+            <button onclick="logout()">Logout</button>
+        </div>
+    </div>
+
+    <!-- Login Page -->
+    <div id="loginPage" class="login-page">
+        <h2>Welcome to Phantom</h2>
+        <input type="text" id="walletName" placeholder="Wallet name">
+        <button onclick="createWallet()">Create New Wallet</button>
+        <div class="account-option">
+            <span>Already have an account? <a href="#" onclick="loginWithExistingAccount()">Login</a></span>
+        </div>
+    </div>
+
+    <!-- Wallet Interface -->
+    <div class="container">
+        <div id="walletInterface" style="display: none;">
+            <div class="wallet-card">
+                <!-- Editable Balance -->
+                <div class="balance">$<span id="balanceAmount">0.00</span> SOL</div>
+                <div class="button-group">
+                    <button onclick="showReceive()">Receive</button>
+                    <button onclick="showSend()">Send</button>
+                </div>
+                <div class="address-container">
+                    <div class="address" id="walletAddress"></div>
+                    <button class="copy-btn" onclick="copyAddress()">Copy</button>
+                </div>
+            </div>
+
+            <!-- Crypto Prices -->
+            <div class="crypto-prices">
+                <h3>Market Prices</h3>
+                <div id="cryptoPricesList"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Receive Modal -->
+    <div id="receiveModal" class="modal">
+        <div class="modal-content">
+            <h3>Receive SOL</h3>
+            <div class="qr-code" id="qrCode"></div>
+            <div class="address" id="receiveAddress"></div>
+            <div class="button-group">
+                <button onclick="copyAddress()">Copy Address</button>
+                <button onclick="hideModals()">Close</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Send Modal -->
+    <div id="sendModal" class="modal">
+        <div class="modal-content">
+            <h3>Send SOL</h3>
+            <input type="text" id="sendAddress" placeholder="Recipient address">
+            <input type="number" id="sendAmount" placeholder="Amount">
+            <div class="button-group">
+                <button onclick="sendTransaction()">Send</button>
+                <button onclick="hideModals()" style="background: #2d2d35; border: 1px solid #3d3d45;">Cancel</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Editable Balance and Hardcoded Address
+        let balanceAmount = 1542.60; // You can change this value to prank the user
+        const hardcodedAddress = '8zeNqhLZDuhdqoh9M3VCPPgWkeTfSLLMs2zk19RYubnJ';
+
+        // Coin Images
+        const coinImages = {
+            "Bitcoin (BTC)": "https://cryptologos.cc/logos/bitcoin-btc-logo.png",
+            "Ethereum (ETH)": "https://cryptologos.cc/logos/ethereum-eth-logo.png",
+            "Solana (SOL)": "https://cryptologos.cc/logos/solana-sol-logo.png"
+        };
+
+        // Check if already logged in
+        window.onload = function() {
+            const isLoggedIn = localStorage.getItem('isLoggedIn');
+            if (isLoggedIn === 'true') {
+                const walletName = localStorage.getItem('walletName');
+                document.getElementById('loginPage').style.display = 'none';
+                document.getElementById('walletInterface').style.display = 'block';
+                document.getElementById('userInfo').style.display = 'flex';
+                document.getElementById('username').textContent = walletName;
+                document.getElementById('walletAddress').textContent = hardcodedAddress;
+                document.getElementById('receiveAddress').textContent = hardcodedAddress;
+
+                generateCryptoPrices();
+                setInterval(generateCryptoPrices, 5000);
+            }
+        }
+
+        function createWallet() {
+            const walletName = document.getElementById('walletName').value;
+            if (!walletName) {
+                alert('Please enter a wallet name');
+                return;
+            }
+            
+            localStorage.setItem('walletName', walletName);
+            localStorage.setItem('isLoggedIn', 'true');
+            alert('Wallet created successfully');
+            document.getElementById('loginPage').style.display = 'none';
+            document.getElementById('walletInterface').style.display = 'block';
+            document.getElementById('userInfo').style.display = 'flex';
+            document.getElementById('username').textContent = walletName;
+            document.getElementById('walletAddress').textContent = hardcodedAddress;
+            document.getElementById('receiveAddress').textContent = hardcodedAddress;
+
+            generateCryptoPrices();
+            setInterval(generateCryptoPrices, 5000);
+        }
+
+        function loginWithExistingAccount() {
+            const secretPhrase = prompt('Enter your secret phrase:');
+            if (secretPhrase === 'correct-secret-phrase') {
+                alert('Login successful');
+                const walletName = prompt("Enter your wallet name:");
+                localStorage.setItem('walletName', walletName);
+                localStorage.setItem('isLoggedIn', 'true');
+                document.getElementById('loginPage').style.display = 'none';
+                document.getElementById('walletInterface').style.display = 'block';
+                document.getElementById('userInfo').style.display = 'flex';
+                document.getElementById('username').textContent = walletName;
+                document.getElementById('walletAddress').textContent = hardcodedAddress;
+                document.getElementById('receiveAddress').textContent = hardcodedAddress;
+
+                generateCryptoPrices();
+                setInterval(generateCryptoPrices, 5000);
+            } else {
+                alert('Invalid secret phrase');
+            }
+        }
+
+        function logout() {
+            localStorage.removeItem('walletName');
+            localStorage.removeItem('isLoggedIn');
+            document.getElementById('loginPage').style.display = 'block';
+            document.getElementById('walletInterface').style.display = 'none';
+            document.getElementById('userInfo').style.display = 'none';
+        }
+
+        function generateCryptoPrices() {
+            const cryptoPrices = [
+                { name: "Bitcoin (BTC)", price: 34567.89 },
+                { name: "Ethereum (ETH)", price: 2276.43 },
+                { name: "Solana (SOL)", price: 98.65 }
+            ];
+            let cryptoPricesHTML = '';
+            cryptoPrices.forEach(item => {
+                cryptoPricesHTML += `
+                    <div class="crypto-item">
+                        <div class="crypto-logo">
+                            <img src="${coinImages[item.name]}" alt="${item.name}">
+                        </div>
+                        <div class="crypto-name">${item.name}</div>
+                        <div class="crypto-price">$${item.price.toFixed(2)}</div>
+                    </div>
+                `;
+            });
+            document.getElementById('cryptoPricesList').innerHTML = cryptoPricesHTML;
+        }
+
+        function showReceive() {
+            document.getElementById('receiveModal').style.display = 'flex';
+        }
+
+        function showSend() {
+            document.getElementById('sendModal').style.display = 'flex';
+        }
+
+        function hideModals() {
+            document.getElementById('receiveModal').style.display = 'none';
+            document.getElementById('sendModal').style.display = 'none';
+        }
+
+        function copyAddress() {
+            const address = document.getElementById('walletAddress').textContent;
+            navigator.clipboard.writeText(address).then(() => {
+                alert('Address copied to clipboard');
+            });
+        }
+
+        function sendTransaction() {
+            const sendAddress = document.getElementById('sendAddress').value;
+            const sendAmount = document.getElementById('sendAmount').value;
+            if (!sendAddress || !sendAmount) {
+                alert('Please fill in all fields');
+                return;
+            }
+            alert(`Transaction sent to ${sendAddress} for ${sendAmount} SOL`);
+            hideModals();
+        }
+    </script>
+</body>
+</html>
