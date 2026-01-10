@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>phanphon - Crypto Wallet</title>
+    <title>phanhon - Crypto Wallet</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
@@ -14,8 +14,11 @@
             background-color: #0a0a0a;
             color: white;
             margin: 0;
-            overflow: hidden;
+            display: flex;
+            justify-content: center;
+            align-items: center;
             height: 100vh;
+            overflow: hidden;
         }
 
         .glass {
@@ -43,6 +46,16 @@
             transform: scale(0.98);
         }
 
+        /* Fixed Scrolling Logic */
+        .scroll-container {
+            overflow-y: auto;
+            scrollbar-width: none; /* Firefox */
+            -ms-overflow-style: none;  /* IE/Edge */
+        }
+        .scroll-container::-webkit-scrollbar {
+            display: none; /* Chrome/Safari */
+        }
+
         @keyframes slideUp {
             from { transform: translateY(100%); }
             to { transform: translateY(0); }
@@ -51,373 +64,253 @@
         .modal-animate {
             animation: slideUp 0.3s ease-out;
         }
+
+        .chart-path {
+            stroke-dasharray: 1000;
+            stroke-dashoffset: 1000;
+            animation: draw 2s ease-out forwards;
+        }
+
+        @keyframes draw {
+            to { stroke-dashoffset: 0; }
+        }
     </style>
 </head>
-<body class="flex justify-center items-center">
+<body>
 
     <!-- Main Mobile Container -->
-    <div class="w-full max-w-md h-screen bg-[#0a0a0a] relative flex flex-col shadow-2xl overflow-hidden border-x border-white/5">
+    <div class="w-full max-w-md h-screen bg-[#0a0a0a] relative flex flex-col shadow-2xl border-x border-white/5 overflow-hidden">
         
-        <!-- START SCREEN: Create Wallet -->
+        <!-- SETUP SCREEN -->
         <div id="setup-screen" class="absolute inset-0 z-50 bg-[#0a0a0a] p-8 flex flex-col justify-center transition-all duration-500">
             <div class="mb-12 text-center">
                 <div class="w-20 h-20 bg-blue-600 rounded-2xl mx-auto mb-6 flex items-center justify-center shadow-lg shadow-blue-500/20">
                     <i class="fas fa-shield-halved text-4xl text-white"></i>
                 </div>
-                <h1 class="text-3xl font-bold mb-2">Phanhon</h1>
+                <h1 class="text-3xl font-bold mb-2">phanhon Vault</h1>
                 <p class="text-gray-400">The safest place for your digital assets.</p>
             </div>
-
             <div class="space-y-4">
                 <div>
                     <label class="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2 block">Wallet Name</label>
-                    <input type="text" id="wallet-name-input" placeholder="e.g. Phanhon Wallet" class="w-full bg-white/5 border border-white/10 rounded-xl p-4 outline-none focus:border-blue-500 transition-colors text-white">
+                    <input type="text" id="wallet-name-input" placeholder="Phanhon Wallet" class="w-full bg-white/5 border border-white/10 rounded-xl p-4 outline-none focus:border-blue-500 transition-colors text-white">
                 </div>
                 <button onclick="createWallet()" class="w-full btn-gradient py-4 rounded-xl font-bold text-lg mt-4">
                     Create New Wallet
                 </button>
-                <p class="text-center text-xs text-gray-500 mt-6 px-4">
-                    By clicking Create, you agree to the Terms of Service. Nexus Vault uses military-grade encryption for all private keys.
-                </p>
             </div>
         </div>
 
-        <!-- MAIN APP INTERFACE -->
+        <!-- MAIN APP -->
         <div id="main-app" class="hidden flex-col h-full">
             
-            <!-- Top Status Bar -->
-            <div class="p-6 flex justify-between items-center">
+            <!-- Fixed Header -->
+            <div class="p-6 flex justify-between items-center flex-shrink-0">
                 <div class="flex items-center gap-2">
                     <div class="w-8 h-8 rounded-full bg-gradient-to-br from-purple-500 to-blue-500 flex items-center justify-center text-xs font-bold">NV</div>
                     <span id="display-wallet-name" class="font-semibold text-sm">Phanhon Wallet</span>
-                    <i class="fas fa-chevron-down text-[10px] text-gray-500"></i>
                 </div>
                 <div class="flex items-center gap-4 text-gray-400">
-                    <i class="fas fa-qrcode cursor-pointer" onclick="showModal('receive-modal')"></i>
-                    <i class="fas fa-bell"></i>
+                    <i class="fas fa-qrcode" onclick="showModal('receive-modal')"></i>
                     <i class="fas fa-gear"></i>
                 </div>
             </div>
 
-            <!-- Balance Header -->
-            <div class="px-6 py-4">
-                <div class="flex items-center gap-2 mb-1">
-                    <span class="text-gray-400 text-sm font-medium">Total Balance</span>
-                    <i class="far fa-eye text-xs text-gray-600 cursor-pointer" onclick="togglePrivacy()"></i>
-                </div>
-                <div class="flex items-baseline gap-2">
+            <!-- Scrollable Content Area -->
+            <div class="flex-1 scroll-container pb-24">
+                
+                <!-- Balance Section -->
+                <div class="px-6 py-4">
+                    <div class="flex items-center gap-2 mb-1">
+                        <span class="text-gray-400 text-sm font-medium">Total Balance</span>
+                        <i class="far fa-eye text-xs text-gray-600 cursor-pointer" onclick="togglePrivacy()"></i>
+                    </div>
                     <h2 id="total-balance" class="text-4xl font-bold tracking-tight">$824,192.40 USD</h2>
-                </div>
-                <div class="flex items-center gap-2 mt-2">
-                    <span class="text-green-500 text-sm font-semibold">+4.2% (+$33,210.15)</span>
-                    <span class="text-gray-500 text-xs px-2 py-0.5 bg-white/5 rounded-full">24h</span>
-                </div>
-            </div>
-
-            <!-- Action Buttons -->
-            <div class="grid grid-cols-4 gap-4 px-6 py-6">
-                <div class="flex flex-col items-center gap-2 cursor-pointer group" onclick="showModal('send-modal')">
-                    <div class="w-12 h-12 rounded-full glass flex items-center justify-center text-blue-400 text-xl group-hover:bg-blue-500/20 transition-colors">
-                        <i class="fas fa-arrow-up"></i>
-                    </div>
-                    <span class="text-xs font-medium">Send</span>
-                </div>
-                <div class="flex flex-col items-center gap-2 cursor-pointer group" onclick="showModal('receive-modal')">
-                    <div class="w-12 h-12 rounded-full glass flex items-center justify-center text-blue-400 text-xl group-hover:bg-blue-500/20 transition-colors">
-                        <i class="fas fa-arrow-down"></i>
-                    </div>
-                    <span class="text-xs font-medium">Receive</span>
-                </div>
-                <div class="flex flex-col items-center gap-2 cursor-pointer group" onclick="showModal('swap-modal')">
-                    <div class="w-12 h-12 rounded-full glass flex items-center justify-center text-blue-400 text-xl group-hover:bg-blue-500/20 transition-colors">
-                        <i class="fas fa-repeat"></i>
-                    </div>
-                    <span class="text-xs font-medium">Swap</span>
-                </div>
-                <div class="flex flex-col items-center gap-2 cursor-pointer group" onclick="showModal('error-modal')">
-                    <div class="w-12 h-12 rounded-full glass flex items-center justify-center text-blue-400 text-xl group-hover:bg-blue-500/20 transition-colors">
-                        <i class="fas fa-credit-card"></i>
-                    </div>
-                    <span class="text-xs font-medium">Buy</span>
-                </div>
-            </div>
-
-            <!-- Assets List -->
-            <div class="flex-1 overflow-y-auto px-6 pb-24">
-                <div class="flex justify-between items-center mb-4">
-                    <h3 class="font-bold text-lg">Assets</h3>
-                    <span class="text-blue-500 text-sm font-medium">See all</span>
-                </div>
-
-                <!-- BTC Card -->
-                <div class="coin-card glass p-4 rounded-2xl mb-3 flex items-center justify-between" onclick="showAssetDetails('Bitcoin', '8.42 BTC', '$548,210.30')">
-                    <div class="flex items-center gap-3">
-                        <div class="w-11 h-11 bg-orange-500 rounded-full flex items-center justify-center text-white text-xl">
-                            <i class="fab fa-bitcoin"></i>
-                        </div>
-                        <div>
-                            <div class="font-bold">Bitcoin</div>
-                            <div class="text-xs text-gray-500">8.42 BTC</div>
-                        </div>
-                    </div>
-                    <div class="text-right">
-                        <div class="font-bold">$548,210.30</div>
-                        <div class="text-xs text-green-500">+1.4%</div>
+                    <div class="flex items-center gap-2 mt-2">
+                        <span class="text-green-500 text-sm font-semibold">+4.2% (+$33,210.15)</span>
+                        <span class="text-gray-500 text-xs px-2 py-0.5 bg-white/5 rounded-full">24h</span>
                     </div>
                 </div>
 
-                <!-- SOL Card -->
-                <div class="coin-card glass p-4 rounded-2xl mb-3 flex items-center justify-between" onclick="showAssetDetails('Solana', '1,240.50 SOL', '$189,502.10')">
-                    <div class="flex items-center gap-3">
-                        <div class="w-11 h-11 bg-black border border-white/10 rounded-full flex items-center justify-center text-purple-400 text-xl">
-                            <svg class="w-6 h-6" viewBox="0 0 24 24" fill="currentColor"><path d="M4.5 19h15l-3.5-3.5h-15L4.5 19zm15-14h-15l3.5 3.5h15L19.5 5zm-15 10.5h15l-3.5-3.5h-15l3.5 3.5z"/></svg>
+                <!-- Action Grid -->
+                <div class="grid grid-cols-4 gap-4 px-6 py-6">
+                    <div class="flex flex-col items-center gap-2 cursor-pointer group" onclick="showModal('send-modal')">
+                        <div class="w-12 h-12 rounded-full glass flex items-center justify-center text-blue-400 text-xl group-hover:bg-blue-500/20">
+                            <i class="fas fa-arrow-up"></i>
                         </div>
-                        <div>
-                            <div class="font-bold">Solana</div>
-                            <div class="text-xs text-gray-500">1,240.50 SOL</div>
-                        </div>
+                        <span class="text-xs font-medium">Send</span>
                     </div>
-                    <div class="text-right">
-                        <div class="font-bold">$189,502.10</div>
-                        <div class="text-xs text-green-500">+8.1%</div>
+                    <div class="flex flex-col items-center gap-2 cursor-pointer group" onclick="showModal('receive-modal')">
+                        <div class="w-12 h-12 rounded-full glass flex items-center justify-center text-blue-400 text-xl group-hover:bg-blue-500/20">
+                            <i class="fas fa-arrow-down"></i>
+                        </div>
+                        <span class="text-xs font-medium">Receive</span>
+                    </div>
+                    <div class="flex flex-col items-center gap-2 cursor-pointer" onclick="showModal('swap-modal')">
+                        <div class="w-12 h-12 rounded-full glass flex items-center justify-center text-blue-400 text-xl">
+                            <i class="fas fa-repeat"></i>
+                        </div>
+                        <span class="text-xs font-medium">Swap</span>
+                    </div>
+                    <div class="flex flex-col items-center gap-2 cursor-pointer" onclick="showModal('error-modal')">
+                        <div class="w-12 h-12 rounded-full glass flex items-center justify-center text-blue-400 text-xl">
+                            <i class="fas fa-credit-card"></i>
+                        </div>
+                        <span class="text-xs font-medium">Buy</span>
                     </div>
                 </div>
 
-                <!-- ETH Card -->
-                <div class="coin-card glass p-4 rounded-2xl mb-3 flex items-center justify-between" onclick="showAssetDetails('Ethereum', '35.20 ETH', '$86,480.00')">
-                    <div class="flex items-center gap-3">
-                        <div class="w-11 h-11 bg-indigo-500 rounded-full flex items-center justify-center text-white text-xl">
-                            <i class="fab fa-ethereum"></i>
+                <!-- Assets List -->
+                <div class="px-6">
+                    <h3 class="font-bold text-lg mb-4">Assets</h3>
+                    <div class="space-y-3">
+                        <div class="coin-card glass p-4 rounded-2xl flex items-center justify-between">
+                            <div class="flex items-center gap-3">
+                                <div class="w-11 h-11 bg-orange-500 rounded-full flex items-center justify-center text-white text-xl"><i class="fab fa-bitcoin"></i></div>
+                                <div><div class="font-bold">Bitcoin</div><div class="text-xs text-gray-500">8.42 BTC</div></div>
+                            </div>
+                            <div class="text-right"><div class="font-bold">$548,210.30</div><div class="text-xs text-green-500">+1.4%</div></div>
                         </div>
-                        <div>
-                            <div class="font-bold">Ethereum</div>
-                            <div class="text-xs text-gray-500">35.20 ETH</div>
+                        <div class="coin-card glass p-4 rounded-2xl flex items-center justify-between">
+                            <div class="flex items-center gap-3">
+                                <div class="w-11 h-11 bg-black border border-white/10 rounded-full flex items-center justify-center text-purple-400 text-xl">S</div>
+                                <div><div class="font-bold">Solana</div><div class="text-xs text-gray-500">1,240.50 SOL</div></div>
+                            </div>
+                            <div class="text-right"><div class="font-bold">$189,502.10</div><div class="text-xs text-green-500">+8.1%</div></div>
                         </div>
-                    </div>
-                    <div class="text-right">
-                        <div class="font-bold">$86,480.00</div>
-                        <div class="text-xs text-red-500">-0.2%</div>
+                        <div class="coin-card glass p-4 rounded-2xl flex items-center justify-between">
+                            <div class="flex items-center gap-3">
+                                <div class="w-11 h-11 bg-indigo-500 rounded-full flex items-center justify-center text-white text-xl"><i class="fab fa-ethereum"></i></div>
+                                <div><div class="font-bold">Ethereum</div><div class="text-xs text-gray-500">35.20 ETH</div></div>
+                            </div>
+                            <div class="text-right"><div class="font-bold">$86,480.00</div><div class="text-xs text-red-500">-0.2%</div></div>
+                        </div>
                     </div>
                 </div>
             </div>
 
             <!-- Navigation Bar -->
-            <div class="absolute bottom-0 left-0 right-0 glass h-20 px-10 flex justify-between items-center border-t border-white/10">
-                <div class="flex flex-col items-center gap-1 text-blue-500 cursor-pointer">
+            <div class="absolute bottom-0 left-0 right-0 glass h-20 px-10 flex justify-between items-center border-t border-white/10 z-50">
+                <div class="flex flex-col items-center gap-1 text-blue-500 cursor-pointer" onclick="hideAllModals()">
                     <i class="fas fa-wallet text-xl"></i>
                     <span class="text-[10px] font-bold">Wallet</span>
                 </div>
-                <div class="flex flex-col items-center gap-1 text-gray-500 cursor-pointer group" onclick="showModal('market-modal')">
-                    <i class="fas fa-chart-line text-xl group-hover:text-white transition-colors"></i>
+                <div class="flex flex-col items-center gap-1 text-gray-500 cursor-pointer" onclick="showModal('market-modal')">
+                    <i class="fas fa-chart-line text-xl"></i>
                     <span class="text-[10px]">Market</span>
                 </div>
-                <div class="flex flex-col items-center gap-1 text-gray-500 cursor-pointer group" onclick="showModal('explore-modal')">
-                    <i class="fas fa-compass text-xl group-hover:text-white transition-colors"></i>
-                    <span class="text-[10px]">Explore</span>
-                </div>
-                <div class="flex flex-col items-center gap-1 text-gray-500 cursor-pointer group" onclick="alert('Transaction history is currently synchronizing with the node.')">
-                    <i class="fas fa-clock-rotate-left text-xl group-hover:text-white transition-colors"></i>
+                <div class="flex flex-col items-center gap-1 text-gray-500 cursor-pointer" onclick="showModal('history-modal')">
+                    <i class="fas fa-clock-rotate-left text-xl"></i>
                     <span class="text-[10px]">History</span>
                 </div>
             </div>
         </div>
 
-        <!-- MODALS -->
-        <!-- Error Modal (Buy Button) -->
-        <div id="error-modal" class="hidden absolute inset-0 z-[150] bg-black/80 backdrop-blur-md flex items-center justify-center p-6">
-            <div class="w-full bg-[#1a1a1a] rounded-3xl p-8 border border-red-500/20 text-center">
-                <div class="w-16 h-16 bg-red-500/10 rounded-full flex items-center justify-center text-red-500 text-2xl mx-auto mb-4">
-                    <i class="fas fa-triangle-exclamation"></i>
+        <!-- HISTORY MODAL -->
+        <div id="history-modal" class="hidden absolute inset-0 z-[100] bg-[#0a0a0a] flex flex-col">
+            <div class="p-6 flex items-center gap-4 border-b border-white/5">
+                <i class="fas fa-arrow-left text-gray-400" onclick="hideModal('history-modal')"></i>
+                <h3 class="text-xl font-bold">Transaction History</h3>
+            </div>
+            <div class="flex-1 scroll-container p-6 space-y-8">
+                <div>
+                    <h4 class="text-xs font-bold text-gray-500 uppercase tracking-widest mb-4">January 2026</h4>
+                    <div class="space-y-6">
+                        <div class="flex justify-between items-center">
+                            <div class="flex items-center gap-3">
+                                <div class="w-10 h-10 rounded-full bg-green-500/10 flex items-center justify-center text-green-500"><i class="fas fa-plus"></i></div>
+                                <div><div class="font-bold text-sm">Received RDM Pay</div><div class="text-xs text-gray-500">Network: Solana</div></div>
+                            </div>
+                            <div class="text-right font-bold text-green-500">+$24,500.00</div>
+                        </div>
+                        <div class="flex justify-between items-center">
+                            <div class="flex items-center gap-3">
+                                <div class="w-10 h-10 rounded-full bg-green-500/10 flex items-center justify-center text-green-500"><i class="fas fa-arrow-down-left"></i></div>
+                                <div><div class="font-bold text-sm">Mining Rewards</div><div class="text-xs text-gray-500">Block #824,192</div></div>
+                            </div>
+                            <div class="text-right font-bold text-green-500">+0.015 BTC</div>
+                        </div>
+                        <div class="flex justify-between items-center">
+                            <div class="flex items-center gap-3">
+                                <div class="w-10 h-10 rounded-full bg-white/5 flex items-center justify-center text-gray-400"><i class="fas fa-repeat"></i></div>
+                                <div><div class="font-bold text-sm">Swap BTC to SOL</div><div class="text-xs text-gray-500">0.25 BTC -> 124 SOL</div></div>
+                            </div>
+                            <div class="text-right font-bold text-gray-400">Completed</div>
+                        </div>
+                    </div>
                 </div>
-                <h3 class="text-xl font-bold mb-2">Service Unavailable</h3>
-                <p class="text-gray-400 text-sm mb-6">The fiat-to-crypto gateway is currently experiencing a server error (Code: 503). Please try again in a few minutes.</p>
-                <button onclick="hideModal('error-modal')" class="w-full bg-white/5 py-3 rounded-xl font-bold hover:bg-white/10 transition-colors">Dismiss</button>
+                <div>
+                    <h4 class="text-xs font-bold text-gray-500 uppercase tracking-widest mb-4">December 2025</h4>
+                    <div class="space-y-6">
+                        <div class="flex justify-between items-center">
+                            <div class="flex items-center gap-3">
+                                <div class="w-10 h-10 rounded-full bg-green-500/10 flex items-center justify-center text-green-500"><i class="fas fa-plus"></i></div>
+                                <div><div class="font-bold text-sm">Received RDM Pay</div><div class="text-xs text-gray-500">Network: Solana</div></div>
+                            </div>
+                            <div class="text-right font-bold text-green-500">+$12,000.00</div>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
 
-        <!-- Market Modal -->
+        <!-- MARKET MODAL -->
         <div id="market-modal" class="hidden absolute inset-0 z-[100] bg-[#0a0a0a] flex flex-col">
             <div class="p-6 flex items-center gap-4 border-b border-white/5">
                 <i class="fas fa-arrow-left text-gray-400" onclick="hideModal('market-modal')"></i>
                 <h3 class="text-xl font-bold">Market Trends</h3>
             </div>
-            <div class="p-6 overflow-y-auto">
-                <div class="bg-blue-600/10 border border-blue-500/20 p-4 rounded-2xl mb-6">
-                    <div class="text-blue-400 text-xs font-bold uppercase mb-1">Market Sentiment</div>
-                    <div class="text-xl font-bold italic">Extreme Greed (84/100)</div>
+            <div class="flex-1 scroll-container p-6">
+                <!-- SVG Chart -->
+                <div class="w-full h-48 bg-white/5 rounded-2xl mb-6 relative overflow-hidden flex items-end">
+                    <svg viewBox="0 0 400 150" class="w-full h-full">
+                        <path d="M0,130 Q50,110 100,120 T200,60 T300,80 T400,20" fill="none" stroke="#3b82f6" stroke-width="4" class="chart-path"></path>
+                        <path d="M0,130 Q50,110 100,120 T200,60 T300,80 T400,20 V150 H0 Z" fill="url(#gradient)" opacity="0.2"></path>
+                        <defs>
+                            <linearGradient id="gradient" x1="0" x2="0" y1="0" y2="1">
+                                <stop offset="0%" stop-color="#3b82f6"></stop>
+                                <stop offset="100%" stop-color="#3b82f6" stop-opacity="0"></stop>
+                            </linearGradient>
+                        </defs>
+                    </svg>
+                    <div class="absolute top-4 left-4">
+                        <div class="text-xs text-gray-500 font-bold">24H PERFORMANCE</div>
+                        <div class="text-2xl font-bold text-green-500">+$3,410.15</div>
+                    </div>
                 </div>
+
                 <div class="space-y-6">
                     <div class="flex justify-between items-center">
-                        <div class="flex items-center gap-3">
-                            <div class="w-8 h-8 rounded-full bg-orange-500 flex items-center justify-center text-xs">BTC</div>
-                            <span class="font-medium">Bitcoin</span>
-                        </div>
-                        <div class="text-right">
-                            <div class="font-bold">$65,124.20</div>
-                            <div class="text-xs text-green-500">+1.24%</div>
-                        </div>
+                        <div class="flex items-center gap-3"><div class="w-10 h-10 bg-orange-500 rounded-full flex items-center justify-center">B</div><span class="font-bold">Bitcoin</span></div>
+                        <div class="text-right"><div class="font-bold">$65,124</div><div class="text-xs text-green-500">+2.1%</div></div>
                     </div>
                     <div class="flex justify-between items-center">
-                        <div class="flex items-center gap-3">
-                            <div class="w-8 h-8 rounded-full bg-blue-500 flex items-center justify-center text-xs">SOL</div>
-                            <span class="font-medium">Solana</span>
-                        </div>
-                        <div class="text-right">
-                            <div class="font-bold">$152.88</div>
-                            <div class="text-xs text-green-500">+4.12%</div>
-                        </div>
-                    </div>
-                    <div class="flex justify-between items-center opacity-50">
-                        <div class="flex items-center gap-3">
-                            <div class="w-8 h-8 rounded-full bg-gray-500 flex items-center justify-center text-xs">DOT</div>
-                            <span class="font-medium">Polkadot</span>
-                        </div>
-                        <div class="text-right">
-                            <div class="font-bold">$7.12</div>
-                            <div class="text-xs text-red-500">-0.45%</div>
-                        </div>
+                        <div class="flex items-center gap-3"><div class="w-10 h-10 bg-blue-500 rounded-full flex items-center justify-center">S</div><span class="font-bold">Solana</span></div>
+                        <div class="text-right"><div class="font-bold">$152.80</div><div class="text-xs text-green-500">+8.4%</div></div>
                     </div>
                 </div>
             </div>
         </div>
 
-        <!-- Explore Modal -->
-        <div id="explore-modal" class="hidden absolute inset-0 z-[100] bg-[#0a0a0a] flex flex-col">
-            <div class="p-6 flex items-center gap-4 border-b border-white/5">
-                <i class="fas fa-arrow-left text-gray-400" onclick="hideModal('explore-modal')"></i>
-                <h3 class="text-xl font-bold">Discover DApps</h3>
+        <!-- Modals for Buy/Send/Receive -->
+        <div id="receive-modal" class="hidden absolute inset-0 z-[150] bg-black/90 flex items-center justify-center p-8">
+            <div class="w-full bg-[#111] p-6 rounded-3xl text-center border border-white/10">
+                <h3 class="font-bold text-xl mb-4">Wallet Address</h3>
+                <div class="bg-white p-2 rounded-xl inline-block mb-4"><i class="fas fa-qrcode text-8xl text-black"></i></div>
+                <p class="text-xs font-mono break-all text-gray-400 mb-6">bc1qphanhonwallet4829302kdms93l</p>
+                <button onclick="hideModal('receive-modal')" class="w-full btn-gradient py-3 rounded-xl font-bold">Close</button>
             </div>
-            <div class="p-6 grid grid-cols-2 gap-4">
-                <div class="glass p-4 rounded-2xl flex flex-col items-center gap-3">
-                    <div class="w-12 h-12 bg-pink-500/20 rounded-xl flex items-center justify-center text-pink-500 text-xl">
-                        <i class="fas fa-fire"></i>
-                    </div>
-                    <span class="font-bold text-sm">Popular</span>
-                </div>
-                <div class="glass p-4 rounded-2xl flex flex-col items-center gap-3">
-                    <div class="w-12 h-12 bg-green-500/20 rounded-xl flex items-center justify-center text-green-500 text-xl">
-                        <i class="fas fa-hand-holding-dollar"></i>
-                    </div>
-                    <span class="font-bold text-sm">Staking</span>
-                </div>
-                <div class="glass p-4 rounded-2xl flex flex-col items-center gap-3">
-                    <div class="w-12 h-12 bg-purple-500/20 rounded-xl flex items-center justify-center text-purple-500 text-xl">
-                        <i class="fas fa-images"></i>
-                    </div>
-                    <span class="font-bold text-sm">NFTs</span>
-                </div>
-                <div class="glass p-4 rounded-2xl flex flex-col items-center gap-3">
-                    <div class="w-12 h-12 bg-blue-500/20 rounded-xl flex items-center justify-center text-blue-500 text-xl">
-                        <i class="fas fa-gamepad"></i>
-                    </div>
-                    <span class="font-bold text-sm">Gaming</span>
-                </div>
-            </div>
-        </div>
-
-        <!-- Send Modal -->
-        <div id="send-modal" class="hidden absolute inset-0 z-[100] bg-black/80 backdrop-blur-sm flex items-end">
-            <div class="w-full bg-[#121212] rounded-t-3xl p-6 modal-animate border-t border-white/10">
-                <div class="w-12 h-1 bg-white/20 rounded-full mx-auto mb-6"></div>
-                <h3 class="text-xl font-bold mb-6">Send Assets</h3>
-                <div class="space-y-4 mb-8">
-                    <div class="bg-white/5 p-4 rounded-xl border border-white/10">
-                        <label class="text-xs text-gray-500 block mb-1">To Address</label>
-                        <input type="text" placeholder="Paste address or DNS" class="bg-transparent w-full outline-none text-sm">
-                    </div>
-                    <div class="bg-white/5 p-4 rounded-xl border border-white/10">
-                        <div class="flex justify-between mb-1">
-                            <label class="text-xs text-gray-500">Amount</label>
-                            <span class="text-xs text-blue-500 font-bold">MAX</span>
-                        </div>
-                        <input type="number" placeholder="0.00" class="bg-transparent w-full outline-none text-xl font-bold">
-                    </div>
-                </div>
-                <button onclick="hideModal('send-modal')" class="w-full btn-gradient py-4 rounded-xl font-bold mb-3">Preview Send</button>
-                <button onclick="hideModal('send-modal')" class="w-full py-2 text-gray-500 font-medium">Cancel</button>
-            </div>
-        </div>
-
-        <!-- Receive Modal -->
-        <div id="receive-modal" class="hidden absolute inset-0 z-[100] bg-black/80 backdrop-blur-sm flex items-center justify-center p-6">
-            <div class="w-full bg-[#121212] rounded-3xl p-8 border border-white/10 text-center">
-                <h3 class="text-xl font-bold mb-6">Your BTC Address</h3>
-                <div class="bg-white p-4 rounded-2xl inline-block mb-6 shadow-xl">
-                    <div class="w-48 h-48 bg-black flex items-center justify-center rounded-lg">
-                         <i class="fas fa-qrcode text-8xl text-white"></i>
-                    </div>
-                </div>
-                <p class="text-xs text-gray-400 mb-6 break-all font-mono bg-white/5 p-3 rounded-lg border border-white/5">bc1qxy2kgdy6jrsqjz7022207ur6adxvczu3sc87gd</p>
-                <div class="flex gap-4">
-                    <button onclick="hideModal('receive-modal')" class="flex-1 bg-white/10 py-3 rounded-xl font-bold">Copy</button>
-                    <button onclick="hideModal('receive-modal')" class="flex-1 btn-gradient py-3 rounded-xl font-bold">Close</button>
-                </div>
-            </div>
-        </div>
-
-        <!-- Swap Modal -->
-        <div id="swap-modal" class="hidden absolute inset-0 z-[100] bg-black/80 backdrop-blur-sm flex items-end">
-            <div class="w-full bg-[#121212] rounded-t-3xl p-6 modal-animate border-t border-white/10">
-                <div class="w-12 h-1 bg-white/20 rounded-full mx-auto mb-6"></div>
-                <h3 class="text-xl font-bold mb-6">Swap Assets</h3>
-                <div class="relative space-y-2 mb-8">
-                    <div class="bg-white/5 p-4 rounded-xl border border-white/10">
-                        <label class="text-xs text-gray-500 block">From</label>
-                        <div class="flex justify-between items-center">
-                            <span class="font-bold">12.5 BTC</span>
-                            <span class="text-gray-400">≈ $812,500</span>
-                        </div>
-                    </div>
-                    <div class="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-8 h-8 bg-blue-600 rounded-full flex items-center justify-center border-4 border-[#121212] z-10">
-                        <i class="fas fa-arrow-down text-xs"></i>
-                    </div>
-                    <div class="bg-white/5 p-4 rounded-xl border border-white/10">
-                        <label class="text-xs text-gray-500 block">To</label>
-                        <div class="flex justify-between items-center">
-                            <span class="font-bold">5,412.2 SOL</span>
-                            <span class="text-gray-400">≈ $812,490</span>
-                        </div>
-                    </div>
-                </div>
-                <button onclick="hideModal('swap-modal')" class="w-full btn-gradient py-4 rounded-xl font-bold mb-3">Exchange BTC for SOL</button>
-                <button onclick="hideModal('swap-modal')" class="w-full py-2 text-gray-500 font-medium">Cancel</button>
-            </div>
-        </div>
-
-        <!-- Fake Loading Overlay -->
-        <div id="loading" class="hidden absolute inset-0 z-[60] bg-[#0a0a0a] flex flex-col items-center justify-center p-8 text-center">
-            <div class="w-16 h-16 border-4 border-blue-500/20 border-t-blue-500 rounded-full animate-spin mb-6"></div>
-            <h2 class="text-xl font-bold mb-2">Generating Secure Keys</h2>
-            <p class="text-gray-500 text-sm">Please do not close this window. We are establishing connection to the blockchain...</p>
         </div>
 
     </div>
 
     <script>
-        let isPrivacyMode = false;
-
         function createWallet() {
-            const name = document.getElementById('wallet-name-input').value || 'Phanhon Wallet';
-            const setupScreen = document.getElementById('setup-screen');
-            const mainApp = document.getElementById('main-app');
-            const loading = document.getElementById('loading');
-            const displayName = document.getElementById('display-wallet-name');
-
-            displayName.innerText = name;
-            setupScreen.classList.add('opacity-0', 'pointer-events-none');
-            loading.classList.remove('hidden');
-
-            setTimeout(() => {
-                loading.classList.add('hidden');
-                mainApp.classList.remove('hidden');
-                mainApp.classList.add('flex');
-            }, 2500);
-        }
-
-        function togglePrivacy() {
-            isPrivacyMode = !isPrivacyMode;
-            const balanceEl = document.getElementById('total-balance');
-            balanceEl.innerText = isPrivacyMode ? '••••••••' : '$824,192.40';
+            const nameInput = document.getElementById('wallet-name-input').value;
+            if(nameInput) document.getElementById('display-wallet-name').innerText = nameInput;
+            document.getElementById('setup-screen').style.display = 'none';
+            document.getElementById('main-app').classList.remove('hidden');
+            document.getElementById('main-app').classList.add('flex');
         }
 
         function showModal(id) {
@@ -428,11 +321,14 @@
             document.getElementById(id).classList.add('hidden');
         }
 
-        function showAssetDetails(name, amount, val) {
-            alert(`${name} Analytics\n\nBalance: ${amount}\nValue: ${val}\nStatus: Locked (Hardware Key Required)`);
+        function hideAllModals() {
+            ['market-modal', 'history-modal', 'receive-modal'].forEach(hideModal);
+        }
+
+        function togglePrivacy() {
+            const el = document.getElementById('total-balance');
+            el.innerText = el.innerText.includes('*') ? '$824,192.40' : '••••••••';
         }
     </script>
 </body>
 </html>
-
-
