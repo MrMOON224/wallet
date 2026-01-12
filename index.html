@@ -2,437 +2,592 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Nexus Vault - Crypto Wallet</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Phantom Mobile Pro</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css"/>
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap');
         
-        body {
-            font-family: 'Inter', sans-serif;
-            background-color: #0a0a0a;
-            color: white;
-            margin: 0;
-            overflow: hidden;
-            height: 100vh;
+        :root {
+            --phantom-purple: #ab9ff2;
+            --phantom-dark: #0f0f0f;
+            --glass-bg: rgba(255, 255, 255, 0.03);
+            --glass-border: rgba(255, 255, 255, 0.08);
         }
 
-        .glass {
-            background: rgba(255, 255, 255, 0.03);
-            backdrop-filter: blur(12px);
-            border: 1px solid rgba(255, 255, 255, 0.1);
+        body { 
+            font-family: 'Plus Jakarta Sans', sans-serif; 
+            background-color: #000; 
+            color: white; 
+            margin: 0; 
+            display: flex; 
+            justify-content: center; 
+            align-items: center; 
+            height: 100vh; 
+            overflow: hidden; 
         }
 
-        .btn-gradient {
-            background: linear-gradient(90deg, #3b82f6, #2563eb);
-            transition: all 0.3s ease;
+        .mobile-viewport { 
+            width: 100%; 
+            max-width: 410px; 
+            height: 100vh; 
+            max-height: 860px; 
+            background: var(--phantom-dark); 
+            position: relative; 
+            display: flex; 
+            flex-direction: column; 
+            overflow: hidden; 
         }
 
-        .btn-gradient:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 4px 15px rgba(59, 130, 246, 0.4);
+        @media (min-width: 640px) { 
+            .mobile-viewport { 
+                border: 8px solid #1a1a1a; 
+                border-radius: 48px; 
+                box-shadow: 0 0 100px rgba(171, 159, 242, 0.1);
+            } 
         }
 
-        .coin-card {
-            transition: all 0.2s ease;
-            cursor: pointer;
-        }
+        .phantom-gradient { background: linear-gradient(135deg, #ab9ff2 0%, #4e44ce 100%); }
+        .glass { background: var(--glass-bg); border: 1px solid var(--glass-border); backdrop-filter: blur(10px); }
+        
+        .asset-card { transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1); cursor: pointer; }
+        .asset-card:hover { background: rgba(255,255,255,0.06); }
+        .asset-card:active { transform: scale(0.97); }
 
-        .coin-card:active {
-            transform: scale(0.98);
-        }
+        .loader { border: 2px solid #333; border-top: 2px solid var(--phantom-purple); border-radius: 50%; width: 24px; height: 24px; animation: spin 1s linear infinite; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        
+        .custom-scrollbar::-webkit-scrollbar { width: 0px; }
+        
+        .refresh-indicator { height: 0; overflow: hidden; transition: height 0.3s; display: flex; align-items: center; justify-content: center; background: rgba(171, 159, 242, 0.05); }
+        .refreshing .refresh-indicator { height: 50px; }
 
-        @keyframes slideUp {
-            from { transform: translateY(100%); }
-            to { transform: translateY(0); }
-        }
-
-        .modal-animate {
-            animation: slideUp 0.3s ease-out;
-        }
+        .nav-btn.active { color: var(--phantom-purple); opacity: 1; }
+        .nav-btn.active svg { filter: drop-shadow(0 0 8px var(--phantom-purple)); }
     </style>
 </head>
-<body class="flex justify-center items-center">
+<body>
 
-    <!-- Main Mobile Container -->
-    <div class="w-full max-w-md h-screen bg-[#0a0a0a] relative flex flex-col shadow-2xl overflow-hidden border-x border-white/5">
-        
-        <!-- START SCREEN: Create Wallet -->
-        <div id="setup-screen" class="absolute inset-0 z-50 bg-[#0a0a0a] p-8 flex flex-col justify-center transition-all duration-500">
-            <div class="mb-12 text-center">
-                <div class="w-20 h-20 bg-blue-600 rounded-2xl mx-auto mb-6 flex items-center justify-center shadow-lg shadow-blue-500/20">
-                    <i class="fas fa-shield-halved text-4xl text-white"></i>
+    <div class="mobile-viewport" id="app">
+        <!-- Processing Overlay -->
+        <div id="loading-overlay" class="absolute inset-0 z-[100] bg-black/80 backdrop-blur-md flex items-center justify-center hidden">
+            <div class="flex flex-col items-center gap-4">
+                <div class="loader"></div>
+                <p class="text-[10px] font-bold tracking-widest text-white/40 uppercase">Processing</p>
+            </div>
+        </div>
+
+        <!-- Auth Screen -->
+        <div id="auth-screen" class="h-full w-full flex flex-col items-center justify-center p-10 animate__animated animate__fadeIn">
+            <div class="w-20 h-20 phantom-gradient rounded-[28px] flex items-center justify-center shadow-2xl mb-10">
+                <svg width="40" height="40" viewBox="0 0 128 128" fill="white"><path d="M64 0C28.7 0 0 28.7 0 64s28.7 64 64 64 64-28.7 64-64S99.3 0 64 0zm0 112c-26.5 0-48-21.5-48-48S37.5 16 64 16s48 21.5 48 48-21.5 48-48 48z"/></svg>
+            </div>
+            <h1 class="text-3xl font-bold mb-3">Phantom</h1>
+            <p class="text-white/40 text-center text-sm mb-12">Digital assets for everyone.</p>
+
+            <div class="w-full space-y-4">
+                <div id="login-form">
+                    <div class="glass rounded-2xl p-1 mb-4">
+                        <input type="text" id="login-username" placeholder="Username" class="w-full bg-transparent p-4 text-white outline-none">
+                    </div>
+                    <div class="glass rounded-2xl p-1 mb-6">
+                        <input type="password" id="login-password" placeholder="Password" class="w-full bg-transparent p-4 text-white outline-none">
+                    </div>
+                    <button onclick="signIn()" class="w-full bg-white text-black font-bold py-4 rounded-2xl hover:scale-[1.02] transition-transform">Unlock</button>
+                    <button onclick="toggleAuth('signup')" class="w-full text-white/40 font-semibold mt-6 text-xs uppercase tracking-widest">Create New Wallet</button>
                 </div>
-                <h1 class="text-3xl font-bold mb-2">Phanhon</h1>
-                <p class="text-gray-400">The safest place for your digital assets.</p>
+
+                <div id="signup-form" class="hidden">
+                    <input type="text" id="signup-username" placeholder="Username" class="w-full glass rounded-2xl p-4 mb-3 outline-none">
+                    <input type="password" id="signup-password" placeholder="Password" class="w-full glass rounded-2xl p-4 mb-6 outline-none">
+                    <button onclick="signUp()" class="w-full phantom-gradient text-white font-bold py-4 rounded-2xl">Create Wallet</button>
+                    <button onclick="toggleAuth('login')" class="w-full text-white/40 font-semibold mt-6 text-xs">Back to Login</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Main App Screen -->
+        <div id="main-screen" class="hidden h-full flex flex-col">
+            <header class="px-6 py-5 flex items-center justify-between bg-black/20 backdrop-blur-md">
+                <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 phantom-gradient rounded-xl flex items-center justify-center font-bold text-sm shadow-lg shadow-purple-500/20" id="avatar-init">P</div>
+                    <div>
+                        <p id="user-display" class="text-sm font-bold truncate max-w-[120px]">User</p>
+                        <div class="flex items-center gap-1.5">
+                            <div class="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse"></div>
+                            <p class="text-[10px] text-white/30 font-bold uppercase tracking-tighter" id="wallet-address-head">Main Wallet</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="flex gap-2">
+                    <button onclick="signOut()" class="w-10 h-10 glass rounded-xl flex items-center justify-center text-white/40 hover:text-white transition-colors">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg>
+                    </button>
+                </div>
+            </header>
+
+            <div class="flex-1 overflow-y-auto px-6 py-2 custom-scrollbar" id="view-container">
+                <div id="refresh-box" class="refresh-indicator">
+                    <div class="loader scale-75"></div>
+                </div>
+
+                <!-- Dashboard View -->
+                <div id="view-dashboard" class="animate__animated animate__fadeIn">
+                    <div class="text-center py-12 cursor-pointer active:scale-95 transition-transform" onclick="simulateRefresh()">
+                        <p id="balance-usd" class="text-[48px] font-bold mb-1 tracking-tight">$0.00</p>
+                        <div class="flex items-center justify-center gap-2">
+                            <span class="text-green-400 text-[11px] font-bold">+2.4%</span>
+                            <p class="text-white/30 text-[11px] font-bold uppercase tracking-widest">Total Portfolio</p>
+                        </div>
+                    </div>
+
+                    <div class="flex gap-4 mb-10">
+                        <button onclick="switchView('send')" class="flex-1 flex flex-col items-center gap-2 group">
+                            <div class="w-full h-14 glass rounded-2xl flex items-center justify-center group-hover:bg-white/10 transition-colors">
+                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14m-7-7 7 7-7 7"/></svg>
+                            </div>
+                            <span class="text-[10px] font-bold text-white/40 uppercase tracking-widest">Send</span>
+                        </button>
+                        <button onclick="switchView('receive')" class="flex-1 flex flex-col items-center gap-2 group">
+                            <div class="w-full h-14 glass rounded-2xl flex items-center justify-center group-hover:bg-white/10 transition-colors">
+                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M19 12H5m7 7-7-7 7-7"/></svg>
+                            </div>
+                            <span class="text-[10px] font-bold text-white/40 uppercase tracking-widest">Receive</span>
+                        </button>
+                    </div>
+
+                    <div class="space-y-3 pb-10">
+                        <div class="flex items-center justify-between mb-4">
+                            <p class="text-[10px] font-bold text-white/20 uppercase tracking-widest">Your Assets</p>
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="text-white/20"><path d="M12 5v14M5 12h14"/></svg>
+                        </div>
+                        
+                        <!-- Solana -->
+                        <div class="asset-card glass rounded-[24px] p-5 flex items-center justify-between" onclick="switchView('send', 'SOL')">
+                            <div class="flex items-center gap-4">
+                                <div class="w-10 h-10 rounded-full bg-black flex items-center justify-center overflow-hidden border border-white/5">
+                                    <img src="https://raw.githubusercontent.com/solana-labs/token-list/main/assets/mainnet/So11111111111111111111111111111111111111112/logo.png" class="w-7 h-7">
+                                </div>
+                                <div>
+                                    <p class="font-bold text-sm">Solana</p>
+                                    <p class="text-[11px] text-green-400 font-medium">$145.50 <span class="opacity-50">+1.2%</span></p>
+                                </div>
+                            </div>
+                            <div class="text-right">
+                                <p id="balance-sol" class="font-bold text-sm">0.00 SOL</p>
+                                <p id="balance-usd-sol" class="text-[11px] text-white/30 font-medium">$0.00</p>
+                            </div>
+                        </div>
+
+                        <!-- Bitcoin -->
+                        <div class="asset-card glass rounded-[24px] p-5 flex items-center justify-between" onclick="switchView('send', 'BTC')">
+                            <div class="flex items-center gap-4">
+                                <div class="w-10 h-10 bg-[#F7931A] rounded-full flex items-center justify-center border border-white/10 shadow-lg shadow-orange-500/10">
+                                    <svg width="22" height="22" viewBox="0 0 24 24" fill="white"><path d="M23.638 14.904c-1.602 6.43-8.113 10.34-14.542 8.736C2.67 22.05-1.244 15.556.362 9.103 1.962 2.67 8.474-1.24 14.91.36c6.43 1.602 10.34 8.112 8.728 14.544zm-6.722-4.046c.264-1.763-1.077-2.712-2.91-3.344l.594-2.384-1.452-.362-.578 2.318c-.382-.095-.773-.185-1.164-.273l.583-2.336-1.45-.36-.595 2.385c-.316-.072-.628-.144-.932-.22l.002-.01-2 .5-.386 1.55s1.076.247 1.053.262c.588.147.694.537.676.847l-.678 2.716c.04.01.094.026.152.05l-.153-.038-.95 3.807c-.072.178-.255.445-.668.342.015.022-1.053-.262-1.053-.262l-.72 1.657 1.887.47c.35.088.694.178 1.033.262l-.6 2.41 1.45.362.595-2.384c.396.107.78.21 1.156.305l-.59 2.365 1.452.362.6-2.405c2.476.468 4.34.28 5.122-1.957.63-1.803.024-2.844-1.275-3.522 1.04-.24 1.812-.924 2.022-2.336zm-3.607 5.106c-.448 1.8-3.483.827-4.466.582l.797-3.196c.983.245 4.12.73 3.67 2.614zm.448-5.137c-.41 1.64-2.942.806-3.757.6l.72-2.89c.816.204 3.45.586 3.037 2.29z"/></svg>
+                                </div>
+                                <div>
+                                    <p class="font-bold text-sm">Bitcoin</p>
+                                    <p class="text-[11px] text-green-400 font-medium">$96,420.00 <span class="opacity-50">+0.8%</span></p>
+                                </div>
+                            </div>
+                            <div class="text-right">
+                                <p id="balance-btc" class="font-bold text-sm">0.00 BTC</p>
+                                <p id="balance-usd-btc" class="text-[11px] text-white/30 font-medium">$0.00</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Send View -->
+                <div id="view-send" class="hidden animate__animated animate__fadeIn">
+                    <button onclick="switchView('dashboard')" class="mb-6 opacity-40 hover:opacity-100 flex items-center gap-2 text-xs font-bold uppercase tracking-widest">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M19 12H5m7 7-7-7 7-7"/></svg>
+                        Back
+                    </button>
+                    <div class="flex items-center justify-between mb-8">
+                        <h2 class="text-2xl font-bold" id="send-title">Send SOL</h2>
+                        <div class="glass px-2 py-1 rounded-xl flex gap-1">
+                            <button onclick="toggleSendAsset('SOL')" id="asset-toggle-sol" class="text-[9px] font-black px-3 py-1.5 rounded-lg bg-white text-black">SOL</button>
+                            <button onclick="toggleSendAsset('BTC')" id="asset-toggle-btc" class="text-[9px] font-black px-3 py-1.5 rounded-lg text-white/40">BTC</button>
+                        </div>
+                    </div>
+                    <div class="space-y-4">
+                        <div class="glass p-1 rounded-2xl">
+                            <input type="text" id="send-to-addr" placeholder="Recipient Address" class="w-full bg-transparent p-5 text-sm outline-none">
+                        </div>
+                        <div class="relative glass p-1 rounded-2xl">
+                            <input type="number" id="send-amount" placeholder="0.00" class="w-full bg-transparent p-6 text-4xl font-bold outline-none">
+                            <span class="absolute right-6 top-1/2 -translate-y-1/2 font-bold text-white/10 text-2xl" id="send-asset-unit">SOL</span>
+                        </div>
+                        <p class="text-[10px] text-white/30 px-2 uppercase font-bold tracking-widest" id="available-balance-hint">Available: 0.00</p>
+                        <button onclick="transferFunds()" class="w-full phantom-gradient p-5 rounded-2xl font-bold shadow-lg hover:shadow-purple-500/20 active:scale-95 transition-all mt-4">Review Transaction</button>
+                    </div>
+                </div>
+
+                <!-- Receive View -->
+                <div id="view-receive" class="hidden animate__animated animate__fadeIn text-center">
+                    <button onclick="switchView('dashboard')" class="mb-6 text-left w-full opacity-40 text-xs font-bold uppercase tracking-widest">← Back</button>
+                    <div class="bg-white p-6 rounded-[44px] inline-block mb-8 shadow-2xl relative">
+                        <div id="qr-pattern" class="grid grid-cols-8 gap-1 w-44 h-44"></div>
+                        <div class="absolute inset-0 flex items-center justify-center">
+                            <div class="w-10 h-10 phantom-gradient rounded-xl flex items-center justify-center border-4 border-white">
+                                <svg width="18" height="18" viewBox="0 0 128 128" fill="white"><path d="M64 0C28.7 0 0 28.7 0 64s28.7 64 64 64 64-28.7 64-64S99.3 0 64 0zm0 112c-26.5 0-48-21.5-48-48S37.5 16 64 16s48 21.5 48 48-21.5 48-48 48z"/></svg>
+                            </div>
+                        </div>
+                    </div>
+                    <p class="text-[10px] text-white/30 uppercase font-bold mb-3 tracking-widest">Your Public Address</p>
+                    <div class="glass p-5 rounded-2xl break-all font-mono text-[12px] text-phantom-purple mb-8 leading-relaxed border border-white/5" id="receive-address"></div>
+                    <button onclick="copyAddress()" class="w-full glass p-5 rounded-2xl font-bold hover:bg-white/5 transition-all active:scale-[0.98]">Copy to Clipboard</button>
+                </div>
+
+                <!-- History View -->
+                <div id="view-history" class="hidden animate__animated animate__fadeIn">
+                    <div class="flex items-center justify-between mb-8">
+                        <h2 class="text-xl font-bold">Activity</h2>
+                        <button class="text-white/20 hover:text-white transition-colors">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M7 12h10M10 18h4"/></svg>
+                        </button>
+                    </div>
+                    <div id="history-list" class="space-y-3"></div>
+                </div>
+
+                <!-- Settings View -->
+                <div id="view-settings" class="hidden animate__animated animate__fadeIn">
+                    <h2 class="text-xl font-bold mb-8">Settings</h2>
+                    <div class="space-y-6">
+                        <div class="glass p-6 rounded-[32px] border border-white/5">
+                            <p class="text-[10px] font-bold text-white/30 uppercase tracking-widest mb-4">Profile Identity</p>
+                            <div class="space-y-4">
+                                <div>
+                                    <label class="text-[10px] text-white/20 font-bold uppercase ml-1">Display Name</label>
+                                    <input type="text" id="new-username" placeholder="Enter Name" class="w-full bg-white/5 p-4 rounded-xl text-white outline-none focus:ring-1 ring-phantom-purple/50 mt-1.5 transition-all">
+                                </div>
+                                <button onclick="updateUsername()" class="w-full phantom-gradient py-4 rounded-xl font-bold shadow-lg shadow-purple-500/10 active:scale-95 transition-all">Save Changes</button>
+                            </div>
+                        </div>
+                        
+                        <div class="glass p-6 rounded-[32px] border border-white/5 opacity-80">
+                            <p class="text-[10px] font-bold text-white/30 uppercase tracking-widest mb-4">General</p>
+                            <div class="space-y-4">
+                                <div class="flex items-center justify-between">
+                                    <span class="text-sm font-medium">Currency</span>
+                                    <span class="text-xs text-phantom-purple font-bold">USD</span>
+                                </div>
+                                <div class="flex items-center justify-between">
+                                    <span class="text-sm font-medium">Network</span>
+                                    <span class="text-xs text-green-400 font-bold">Mainnet Beta</span>
+                                </div>
+                                <div class="flex items-center justify-between pt-2 border-t border-white/5">
+                                    <span class="text-sm font-medium">Biometric Access</span>
+                                    <div class="w-10 h-5 bg-white/10 rounded-full relative">
+                                        <div class="absolute right-1 top-1 w-3 h-3 bg-white/20 rounded-full"></div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <button onclick="signOut()" class="w-full text-red-400/60 font-bold text-xs uppercase tracking-widest py-4">Terminate Session</button>
+                    </div>
+                </div>
             </div>
 
-            <div class="space-y-4">
-                <div>
-                    <label class="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2 block">Wallet Name</label>
-                    <input type="text" id="wallet-name-input" placeholder="e.g. Phanhon Wallet" class="w-full bg-white/5 border border-white/10 rounded-xl p-4 outline-none focus:border-blue-500 transition-colors text-white">
-                </div>
-                <button onclick="createWallet()" class="w-full btn-gradient py-4 rounded-xl font-bold text-lg mt-4">
-                    Create New Wallet
+            <!-- Bottom Navigation -->
+            <nav class="h-24 bg-black/80 backdrop-blur-2xl border-t border-white/5 flex items-center justify-around pb-6">
+                <button onclick="switchView('dashboard')" id="nav-dashboard" class="nav-btn active p-3 transition-all active:scale-75 opacity-40">
+                    <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/></svg>
                 </button>
-                <p class="text-center text-xs text-gray-500 mt-6 px-4">
-                    By clicking Create, you agree to the Terms of Service. Nexus Vault uses military-grade encryption for all private keys.
-                </p>
-            </div>
+                <button onclick="switchView('history')" id="nav-history" class="nav-btn p-3 transition-all active:scale-75 opacity-40">
+                    <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                </button>
+                <button onclick="switchView('settings')" id="nav-settings" class="nav-btn p-3 transition-all active:scale-75 opacity-40">
+                    <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+                </button>
+            </nav>
         </div>
 
-        <!-- MAIN APP INTERFACE -->
-        <div id="main-app" class="hidden flex-col h-full">
-            
-            <!-- Top Status Bar -->
-            <div class="p-6 flex justify-between items-center">
-                <div class="flex items-center gap-2">
-                    <div class="w-8 h-8 rounded-full bg-gradient-to-br from-purple-500 to-blue-500 flex items-center justify-center text-xs font-bold">NV</div>
-                    <span id="display-wallet-name" class="font-semibold text-sm">Phanhon Wallet</span>
-                    <i class="fas fa-chevron-down text-[10px] text-gray-500"></i>
-                </div>
-                <div class="flex items-center gap-4 text-gray-400">
-                    <i class="fas fa-qrcode cursor-pointer" onclick="showModal('receive-modal')"></i>
-                    <i class="fas fa-bell"></i>
-                    <i class="fas fa-gear"></i>
-                </div>
-            </div>
-
-            <!-- Balance Header -->
-            <div class="px-6 py-4">
-                <div class="flex items-center gap-2 mb-1">
-                    <span class="text-gray-400 text-sm font-medium">Total Balance</span>
-                    <i class="far fa-eye text-xs text-gray-600 cursor-pointer" onclick="togglePrivacy()"></i>
-                </div>
-                <div class="flex items-baseline gap-2">
-                    <h2 id="total-balance" class="text-4xl font-bold tracking-tight">$10.23</h2>
-                </div>
-                <div class="flex items-center gap-2 mt-2">
-                    <span class="text-green-500 text-sm font-semibold"></span>
-                    <span class="text-gray-500 text-xs px-2 py-0.5 bg-white/5 rounded-full">24h</span>
-                </div>
-            </div>
-
-            <!-- Action Buttons -->
-            <div class="grid grid-cols-4 gap-4 px-6 py-6">
-                <div class="flex flex-col items-center gap-2 cursor-pointer group" onclick="showModal('send-modal')">
-                    <div class="w-12 h-12 rounded-full glass flex items-center justify-center text-blue-400 text-xl group-hover:bg-blue-500/20 transition-colors">
-                        <i class="fas fa-arrow-up"></i>
-                    </div>
-                    <span class="text-xs font-medium">Send</span>
-                </div>
-                <div class="flex flex-col items-center gap-2 cursor-pointer group" onclick="showModal('receive-modal')">
-                    <div class="w-12 h-12 rounded-full glass flex items-center justify-center text-blue-400 text-xl group-hover:bg-blue-500/20 transition-colors">
-                        <i class="fas fa-arrow-down"></i>
-                    </div>
-                    <span class="text-xs font-medium">Receive</span>
-                </div>
-                <div class="flex flex-col items-center gap-2 cursor-pointer group" onclick="showModal('swap-modal')">
-                    <div class="w-12 h-12 rounded-full glass flex items-center justify-center text-blue-400 text-xl group-hover:bg-blue-500/20 transition-colors">
-                        <i class="fas fa-repeat"></i>
-                    </div>
-                    <span class="text-xs font-medium">Swap</span>
-                </div>
-                <div class="flex flex-col items-center gap-2 cursor-pointer group" onclick="showModal('error-modal')">
-                    <div class="w-12 h-12 rounded-full glass flex items-center justify-center text-blue-400 text-xl group-hover:bg-blue-500/20 transition-colors">
-                        <i class="fas fa-credit-card"></i>
-                    </div>
-                    <span class="text-xs font-medium">Buy</span>
-                </div>
-            </div>
-
-            <!-- Assets List -->
-            <div class="flex-1 overflow-y-auto px-6 pb-24">
-                <div class="flex justify-between items-center mb-4">
-                    <h3 class="font-bold text-lg">Assets</h3>
-                    <span class="text-blue-500 text-sm font-medium">See all</span>
-                </div>
-
-                <!-- BTC Card -->
-                <div class="coin-card glass p-4 rounded-2xl mb-3 flex items-center justify-between" onclick="showAssetDetails('Bitcoin', '8.42 BTC', '$548,210.30')">
-                    <div class="flex items-center gap-3">
-                        <div class="w-11 h-11 bg-orange-500 rounded-full flex items-center justify-center text-white text-xl">
-                            <i class="fab fa-bitcoin"></i>
-                        </div>
-                        <div>
-                            <div class="font-bold">Bitcoin</div>
-                            <div class="text-xs text-gray-500">0.0001btc</div>
-                        </div>
-                    </div>
-                    <div class="text-right">
-                        <div class="font-bold"></div>
-                        <div class="text-xs text-green-500"></div>
-                    </div>
-                </div>
-
-                <!-- SOL Card -->
-                <div class="coin-card glass p-4 rounded-2xl mb-3 flex items-center justify-between" onclick="showAssetDetails('Solana', '1,240.50 SOL', '$189,502.10')">
-                    <div class="flex items-center gap-3">
-                        <div class="w-11 h-11 bg-black border border-white/10 rounded-full flex items-center justify-center text-purple-400 text-xl">
-                            <svg class="w-6 h-6" viewBox="0 0 24 24" fill="currentColor"><path d="M4.5 19h15l-3.5-3.5h-15L4.5 19zm15-14h-15l3.5 3.5h15L19.5 5zm-15 10.5h15l-3.5-3.5h-15l3.5 3.5z"/></svg>
-                        </div>
-                        <div>
-                            <div class="font-bold">Solana</div>
-                            <div class="text-xs text-gray-500">0soL</div>
-                        </div>
-                    </div>
-                    <div class="text-right">
-                        <div class="font-bold"></div>
-                        <div class="text-xs text-green-500"></div>
-                    </div>
-                </div>
-
-                <!-- ETH Card -->
-                <div class="coin-card glass p-4 rounded-2xl mb-3 flex items-center justify-between" onclick="showAssetDetails('Ethereum', '35.20 ETH', '$86,480.00')">
-                    <div class="flex items-center gap-3">
-                        <div class="w-11 h-11 bg-indigo-500 rounded-full flex items-center justify-center text-white text-xl">
-                            <i class="fab fa-ethereum"></i>
-                        </div>
-                        <div>
-                            <div class="font-bold">Ethereum</div>
-                            <div class="text-xs text-gray-500">0 ETH</div>
-                        </div>
-                    </div>
-                    <div class="text-right">
-                        <div class="font-bold"></div>
-                        <div class="text-xs text-red-500">-0</div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Navigation Bar -->
-            <div class="absolute bottom-0 left-0 right-0 glass h-20 px-10 flex justify-between items-center border-t border-white/10">
-                <div class="flex flex-col items-center gap-1 text-blue-500 cursor-pointer">
-                    <i class="fas fa-wallet text-xl"></i>
-                    <span class="text-[10px] font-bold">Wallet</span>
-                </div>
-                <div class="flex flex-col items-center gap-1 text-gray-500 cursor-pointer group" onclick="showModal('market-modal')">
-                    <i class="fas fa-chart-line text-xl group-hover:text-white transition-colors"></i>
-                    <span class="text-[10px]">Market</span>
-                </div>
-                <div class="flex flex-col items-center gap-1 text-gray-500 cursor-pointer group" onclick="showModal('explore-modal')">
-                    <i class="fas fa-compass text-xl group-hover:text-white transition-colors"></i>
-                    <span class="text-[10px]">Explore</span>
-                </div>
-                <div class="flex flex-col items-center gap-1 text-gray-500 cursor-pointer group" onclick="alert('Transaction history is currently synchronizing with the node.')">
-                    <i class="fas fa-clock-rotate-left text-xl group-hover:text-white transition-colors"></i>
-                    <span class="text-[10px]">History</span>
-                </div>
-            </div>
-        </div>
-
-        <!-- MODALS -->
-        <!-- Error Modal (Buy Button) -->
-        <div id="error-modal" class="hidden absolute inset-0 z-[150] bg-black/80 backdrop-blur-md flex items-center justify-center p-6">
-            <div class="w-full bg-[#1a1a1a] rounded-3xl p-8 border border-red-500/20 text-center">
-                <div class="w-16 h-16 bg-red-500/10 rounded-full flex items-center justify-center text-red-500 text-2xl mx-auto mb-4">
-                    <i class="fas fa-triangle-exclamation"></i>
-                </div>
-                <h3 class="text-xl font-bold mb-2">Service Unavailable</h3>
-                <p class="text-gray-400 text-sm mb-6">The fiat-to-crypto gateway is currently experiencing a server error (Code: 503). Please try again in a few minutes.</p>
-                <button onclick="hideModal('error-modal')" class="w-full bg-white/5 py-3 rounded-xl font-bold hover:bg-white/10 transition-colors">Dismiss</button>
-            </div>
-        </div>
-
-        <!-- Market Modal -->
-        <div id="market-modal" class="hidden absolute inset-0 z-[100] bg-[#0a0a0a] flex flex-col">
-            <div class="p-6 flex items-center gap-4 border-b border-white/5">
-                <i class="fas fa-arrow-left text-gray-400" onclick="hideModal('market-modal')"></i>
-                <h3 class="text-xl font-bold">Market Trends</h3>
-            </div>
-            <div class="p-6 overflow-y-auto">
-                <div class="bg-blue-600/10 border border-blue-500/20 p-4 rounded-2xl mb-6">
-                    <div class="text-blue-400 text-xs font-bold uppercase mb-1">Market Sentiment</div>
-                    <div class="text-xl font-bold italic">Extreme Greed (84/100)</div>
-                </div>
-                <div class="space-y-6">
-                    <div class="flex justify-between items-center">
-                        <div class="flex items-center gap-3">
-                            <div class="w-8 h-8 rounded-full bg-orange-500 flex items-center justify-center text-xs">BTC</div>
-                            <span class="font-medium">Bitcoin</span>
-                        </div>
-                        <div class="text-right">
-                            <div class="font-bold">$65,124.20</div>
-                            <div class="text-xs text-green-500">+1.24%</div>
-                        </div>
-                    </div>
-                    <div class="flex justify-between items-center">
-                        <div class="flex items-center gap-3">
-                            <div class="w-8 h-8 rounded-full bg-blue-500 flex items-center justify-center text-xs">SOL</div>
-                            <span class="font-medium">Solana</span>
-                        </div>
-                        <div class="text-right">
-                            <div class="font-bold">$152.88</div>
-                            <div class="text-xs text-green-500">+4.12%</div>
-                        </div>
-                    </div>
-                    <div class="flex justify-between items-center opacity-50">
-                        <div class="flex items-center gap-3">
-                            <div class="w-8 h-8 rounded-full bg-gray-500 flex items-center justify-center text-xs">DOT</div>
-                            <span class="font-medium">Polkadot</span>
-                        </div>
-                        <div class="text-right">
-                            <div class="font-bold">$7.12</div>
-                            <div class="text-xs text-red-500">-0.45%</div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Explore Modal -->
-        <div id="explore-modal" class="hidden absolute inset-0 z-[100] bg-[#0a0a0a] flex flex-col">
-            <div class="p-6 flex items-center gap-4 border-b border-white/5">
-                <i class="fas fa-arrow-left text-gray-400" onclick="hideModal('explore-modal')"></i>
-                <h3 class="text-xl font-bold">Discover DApps</h3>
-            </div>
-            <div class="p-6 grid grid-cols-2 gap-4">
-                <div class="glass p-4 rounded-2xl flex flex-col items-center gap-3">
-                    <div class="w-12 h-12 bg-pink-500/20 rounded-xl flex items-center justify-center text-pink-500 text-xl">
-                        <i class="fas fa-fire"></i>
-                    </div>
-                    <span class="font-bold text-sm">Popular</span>
-                </div>
-                <div class="glass p-4 rounded-2xl flex flex-col items-center gap-3">
-                    <div class="w-12 h-12 bg-green-500/20 rounded-xl flex items-center justify-center text-green-500 text-xl">
-                        <i class="fas fa-hand-holding-dollar"></i>
-                    </div>
-                    <span class="font-bold text-sm">Staking</span>
-                </div>
-                <div class="glass p-4 rounded-2xl flex flex-col items-center gap-3">
-                    <div class="w-12 h-12 bg-purple-500/20 rounded-xl flex items-center justify-center text-purple-500 text-xl">
-                        <i class="fas fa-images"></i>
-                    </div>
-                    <span class="font-bold text-sm">NFTs</span>
-                </div>
-                <div class="glass p-4 rounded-2xl flex flex-col items-center gap-3">
-                    <div class="w-12 h-12 bg-blue-500/20 rounded-xl flex items-center justify-center text-blue-500 text-xl">
-                        <i class="fas fa-gamepad"></i>
-                    </div>
-                    <span class="font-bold text-sm">Gaming</span>
-                </div>
-            </div>
-        </div>
-
-        <!-- Send Modal -->
-        <div id="send-modal" class="hidden absolute inset-0 z-[100] bg-black/80 backdrop-blur-sm flex items-end">
-            <div class="w-full bg-[#121212] rounded-t-3xl p-6 modal-animate border-t border-white/10">
-                <div class="w-12 h-1 bg-white/20 rounded-full mx-auto mb-6"></div>
-                <h3 class="text-xl font-bold mb-6">Send Assets</h3>
-                <div class="space-y-4 mb-8">
-                    <div class="bg-white/5 p-4 rounded-xl border border-white/10">
-                        <label class="text-xs text-gray-500 block mb-1">To Address</label>
-                        <input type="text" placeholder="Paste address or DNS" class="bg-transparent w-full outline-none text-sm">
-                    </div>
-                    <div class="bg-white/5 p-4 rounded-xl border border-white/10">
-                        <div class="flex justify-between mb-1">
-                            <label class="text-xs text-gray-500">Amount</label>
-                            <span class="text-xs text-blue-500 font-bold">MAX</span>
-                        </div>
-                        <input type="number" placeholder="0.00" class="bg-transparent w-full outline-none text-xl font-bold">
-                    </div>
-                </div>
-                <button onclick="hideModal('send-modal')" class="w-full btn-gradient py-4 rounded-xl font-bold mb-3">Preview Send</button>
-                <button onclick="hideModal('send-modal')" class="w-full py-2 text-gray-500 font-medium">Cancel</button>
-            </div>
-        </div>
-
-        <!-- Receive Modal -->
-        <div id="receive-modal" class="hidden absolute inset-0 z-[100] bg-black/80 backdrop-blur-sm flex items-center justify-center p-6">
-            <div class="w-full bg-[#121212] rounded-3xl p-8 border border-white/10 text-center">
-                <h3 class="text-xl font-bold mb-6">Your BTC Address</h3>
-                <div class="bg-white p-4 rounded-2xl inline-block mb-6 shadow-xl">
-                    <div class="w-48 h-48 bg-black flex items-center justify-center rounded-lg">
-                         <i class="fas fa-qrcode text-8xl text-white"></i>
-                    </div>
-                </div>
-                <p class="text-xs text-gray-400 mb-6 break-all font-mono bg-white/5 p-3 rounded-lg border border-white/5">bc1qxy2kgdy6jrsqjz7022207ur6adxvczu3sc87gd</p>
-                <div class="flex gap-4">
-                    <button onclick="hideModal('receive-modal')" class="flex-1 bg-white/10 py-3 rounded-xl font-bold">Copy</button>
-                    <button onclick="hideModal('receive-modal')" class="flex-1 btn-gradient py-3 rounded-xl font-bold">Close</button>
-                </div>
-            </div>
-        </div>
-
-        <!-- Swap Modal -->
-        <div id="swap-modal" class="hidden absolute inset-0 z-[100] bg-black/80 backdrop-blur-sm flex items-end">
-            <div class="w-full bg-[#121212] rounded-t-3xl p-6 modal-animate border-t border-white/10">
-                <div class="w-12 h-1 bg-white/20 rounded-full mx-auto mb-6"></div>
-                <h3 class="text-xl font-bold mb-6">Swap Assets</h3>
-                <div class="relative space-y-2 mb-8">
-                    <div class="bg-white/5 p-4 rounded-xl border border-white/10">
-                        <label class="text-xs text-gray-500 block">From</label>
-                        <div class="flex justify-between items-center">
-                            <span class="font-bold">12.5 BTC</span>
-                            <span class="text-gray-400">≈ $812,500</span>
-                        </div>
-                    </div>
-                    <div class="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-8 h-8 bg-blue-600 rounded-full flex items-center justify-center border-4 border-[#121212] z-10">
-                        <i class="fas fa-arrow-down text-xs"></i>
-                    </div>
-                    <div class="bg-white/5 p-4 rounded-xl border border-white/10">
-                        <label class="text-xs text-gray-500 block">To</label>
-                        <div class="flex justify-between items-center">
-                            <span class="font-bold">5,412.2 SOL</span>
-                            <span class="text-gray-400">≈ $812,490</span>
-                        </div>
-                    </div>
-                </div>
-                <button onclick="hideModal('swap-modal')" class="w-full btn-gradient py-4 rounded-xl font-bold mb-3">Exchange BTC for SOL</button>
-                <button onclick="hideModal('swap-modal')" class="w-full py-2 text-gray-500 font-medium">Cancel</button>
-            </div>
-        </div>
-
-        <!-- Fake Loading Overlay -->
-        <div id="loading" class="hidden absolute inset-0 z-[60] bg-[#0a0a0a] flex flex-col items-center justify-center p-8 text-center">
-            <div class="w-16 h-16 border-4 border-blue-500/20 border-t-blue-500 rounded-full animate-spin mb-6"></div>
-            <h2 class="text-xl font-bold mb-2">Generating Secure Keys</h2>
-            <p class="text-gray-500 text-sm">Please do not close this window. We are establishing connection to the blockchain...</p>
-        </div>
-
+        <!-- System Toast -->
+        <div id="toast" class="fixed bottom-28 left-8 right-8 p-4 glass rounded-2xl text-center text-[11px] font-bold transform translate-y-64 transition-transform z-[200] shadow-2xl border border-white/10 uppercase tracking-widest"></div>
     </div>
 
     <script>
-        let isPrivacyMode = false;
+        const supabaseConfig = {
+            url: "https://ehhgrwcgckcqbjoxitsx.supabase.co",
+            key: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVoaGdyd2NnY2tjcWJqb3hpdHN4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjgxMjg3ODksImV4cCI6MjA4MzcwNDc4OX0.fJIZ0-Fu3wFIZmI3pFwJ83IH_sWRMWc1K6B3GQvLU1k"
+        };
+        const sb = supabase.createClient(supabaseConfig.url, supabaseConfig.key);
+        const SOL_PRICE = 145.50;
+        const BTC_PRICE = 96420.00;
+        let user = null;
+        let selectedSendAsset = 'SOL';
 
-        function createWallet() {
-            const name = document.getElementById('wallet-name-input').value || 'Phanhon Wallet';
-            const setupScreen = document.getElementById('setup-screen');
-            const mainApp = document.getElementById('main-app');
-            const loading = document.getElementById('loading');
-            const displayName = document.getElementById('display-wallet-name');
+        window.onload = () => {
+            const savedUser = localStorage.getItem('phantom_user');
+            if(savedUser) {
+                user = JSON.parse(savedUser);
+                loadSession();
+            }
+        };
 
-            displayName.innerText = name;
-            setupScreen.classList.add('opacity-0', 'pointer-events-none');
-            loading.classList.remove('hidden');
-
-            setTimeout(() => {
-                loading.classList.add('hidden');
-                mainApp.classList.remove('hidden');
-                mainApp.classList.add('flex');
-            }, 2500);
+        async function loadSession() {
+            const { data } = await sb.from('profiles').select('*').eq('id', user.id).single();
+            if(data) {
+                user = data;
+                localStorage.setItem('phantom_user', JSON.stringify(user));
+            }
+            document.getElementById('auth-screen').classList.add('hidden');
+            document.getElementById('main-screen').classList.remove('hidden');
+            syncUserProfile();
+            updateUI();
         }
 
-        function togglePrivacy() {
-            isPrivacyMode = !isPrivacyMode;
-            const balanceEl = document.getElementById('total-balance');
-            balanceEl.innerText = isPrivacyMode ? '••••••••' : '$824,192.40';
+        function syncUserProfile() {
+            document.getElementById('user-display').innerText = user.username;
+            document.getElementById('avatar-init').innerText = user.username.charAt(0).toUpperCase();
+            document.getElementById('wallet-address-head').innerText = getAddress(user.username).substring(0, 10) + "...";
+            document.getElementById('new-username').value = user.username;
         }
 
-        function showModal(id) {
-            document.getElementById(id).classList.remove('hidden');
+        function getAddress(username) {
+            const chars = "123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz";
+            let addr = "PH"; 
+            for (let i = 0; i < 42; i++) {
+                const charIndex = (username.charCodeAt(i % username.length) + i) % chars.length;
+                addr += chars[charIndex];
+            }
+            return addr;
         }
 
-        function hideModal(id) {
-            document.getElementById(id).classList.add('hidden');
+        async function updateUsername() {
+            const newName = document.getElementById('new-username').value.trim();
+            if(!newName) return showToast("Name cannot be empty");
+            if(newName === user.username) return showToast("No changes detected");
+
+            toggleLoading(true);
+            const { error } = await sb.from('profiles').update({ username: newName }).eq('id', user.id);
+            toggleLoading(false);
+
+            if(error) return showToast("Error updating profile");
+            
+            user.username = newName;
+            localStorage.setItem('phantom_user', JSON.stringify(user));
+            syncUserProfile();
+            showToast("Profile updated!");
         }
 
-        function showAssetDetails(name, amount, val) {
-            alert(`${name} Analytics\n\nBalance: ${amount}\nValue: ${val}\nStatus: Locked (Hardware Key Required)`);
+        function showToast(msg) {
+            const t = document.getElementById('toast');
+            t.innerText = msg;
+            t.classList.remove('translate-y-64');
+            setTimeout(() => t.classList.add('translate-y-64'), 2500);
+        }
+
+        function toggleLoading(show) {
+            document.getElementById('loading-overlay').classList.toggle('hidden', !show);
+        }
+
+        function switchView(view, asset = 'SOL') {
+            const views = ['dashboard', 'send', 'history', 'receive', 'settings'];
+            views.forEach(v => {
+                const el = document.getElementById(`view-${v}`);
+                if(el) el.classList.add('hidden');
+            });
+            
+            const target = document.getElementById(`view-${view}`);
+            if(target) target.classList.remove('hidden');
+            
+            // UI State management
+            document.querySelectorAll('.nav-btn').forEach(btn => btn.classList.remove('active'));
+            if(['dashboard', 'send', 'receive'].includes(view)) document.getElementById('nav-dashboard').classList.add('active');
+            if(view === 'history') document.getElementById('nav-history').classList.add('active');
+            if(view === 'settings') document.getElementById('nav-settings').classList.add('active');
+
+            if(view === 'history') loadHistory();
+            if(view === 'receive') {
+                document.getElementById('receive-address').innerText = getAddress(user.username);
+                generateQR();
+            }
+            if(view === 'send') toggleSendAsset(asset);
+        }
+
+        function toggleSendAsset(asset) {
+            selectedSendAsset = asset;
+            document.getElementById('send-title').innerText = `Send ${asset}`;
+            document.getElementById('send-asset-unit').innerText = asset;
+            
+            const solBtn = document.getElementById('asset-toggle-sol');
+            const btcBtn = document.getElementById('asset-toggle-btc');
+            
+            if(asset === 'SOL') {
+                solBtn.className = "text-[9px] font-black px-3 py-1.5 rounded-lg bg-white text-black";
+                btcBtn.className = "text-[9px] font-black px-3 py-1.5 rounded-lg text-white/40";
+                document.getElementById('available-balance-hint').innerText = `Available: ${user.balance.toFixed(2)} SOL`;
+            } else {
+                btcBtn.className = "text-[9px] font-black px-3 py-1.5 rounded-lg bg-white text-black";
+                solBtn.className = "text-[9px] font-black px-3 py-1.5 rounded-lg text-white/40";
+                const btcBal = (user.username === "MasterBanker" || user.id === 1) ? 0.5 : 0;
+                document.getElementById('available-balance-hint').innerText = `Available: ${btcBal} BTC`;
+            }
+        }
+
+        function simulateRefresh() {
+            document.getElementById('app').classList.add('refreshing');
+            setTimeout(async () => {
+                const { data } = await sb.from('profiles').select('*').eq('id', user.id).single();
+                if(data) {
+                    user = data;
+                    localStorage.setItem('phantom_user', JSON.stringify(user));
+                    updateUI();
+                }
+                document.getElementById('app').classList.remove('refreshing');
+            }, 800);
+        }
+
+        function generateQR() {
+            const grid = document.getElementById('qr-pattern');
+            grid.innerHTML = '';
+            for(let i=0; i<64; i++) {
+                const cell = document.createElement('div');
+                cell.className = `${Math.random() > 0.65 ? 'bg-black' : 'bg-transparent'} w-full h-full`;
+                grid.appendChild(cell);
+            }
+        }
+
+        async function signUp() {
+            const username = document.getElementById('signup-username').value.trim();
+            const password = document.getElementById('signup-password').value.trim();
+            if (!username || !password) return showToast("Fields Required");
+            toggleLoading(true);
+            const { error } = await sb.from('profiles').insert([{ username, password, balance: 10 }]);
+            toggleLoading(false);
+            if (error) return showToast("Account exists");
+            showToast("Wallet Created!");
+            toggleAuth('login');
+        }
+
+        async function signIn() {
+            const username = document.getElementById('login-username').value.trim();
+            const password = document.getElementById('login-password').value.trim();
+            if(!username || !password) return showToast("Credentials required");
+            
+            toggleLoading(true);
+            const { data, error } = await sb.from('profiles').select('*').eq('username', username).eq('password', password).single();
+            toggleLoading(false);
+            
+            if (error || !data) return showToast("Access Denied");
+            
+            user = data;
+            localStorage.setItem('phantom_user', JSON.stringify(user));
+            loadSession();
+        }
+
+        function updateUI() {
+            const sol = user.balance || 0;
+            const btc = (user.username === "MasterBanker" || user.id === 1) ? 0.5 : 0;
+            const total = (sol * SOL_PRICE) + (btc * BTC_PRICE);
+            document.getElementById('balance-usd').innerText = `$${total.toLocaleString(undefined, {minimumFractionDigits: 2})}`;
+            document.getElementById('balance-sol').innerText = `${sol.toFixed(2)} SOL`;
+            document.getElementById('balance-usd-sol').innerText = `$${(sol * SOL_PRICE).toLocaleString()}`;
+            document.getElementById('balance-btc').innerText = `${btc.toFixed(4)} BTC`;
+            document.getElementById('balance-usd-btc').innerText = `$${(btc * BTC_PRICE).toLocaleString()}`;
+        }
+
+        async function transferFunds() {
+            const address = document.getElementById('send-to-addr').value.trim();
+            const amount = parseFloat(document.getElementById('send-amount').value);
+            if (!address || isNaN(amount) || amount <= 0) return showToast("Invalid Amount");
+            
+            if(selectedSendAsset === 'SOL') {
+                if (amount > user.balance) return showToast("Insufficient SOL");
+                toggleLoading(true);
+                
+                const { data: profiles } = await sb.from('profiles').select('username, id');
+                const recipient = profiles.find(p => getAddress(p.username) === address);
+                
+                if (!recipient) { toggleLoading(false); return showToast("Recipient not found"); }
+
+                try {
+                    const { data: recProfile } = await sb.from('profiles').select('*').eq('id', recipient.id).single();
+                    await sb.from('profiles').update({ balance: user.balance - amount }).eq('id', user.id);
+                    await sb.from('profiles').update({ balance: recProfile.balance + amount }).eq('id', recipient.id);
+                    await sb.from('transactions').insert([{ 
+                        from_id: user.id, to_id: recipient.id, amount, 
+                        from_username: user.username, to_username: recipient.username 
+                    }]);
+
+                    const { data: refreshed } = await sb.from('profiles').select('*').eq('id', user.id).single();
+                    user = refreshed;
+                    localStorage.setItem('phantom_user', JSON.stringify(user));
+                    updateUI();
+                    showToast("Sent Successfully!");
+                    switchView('dashboard');
+                } catch (err) {
+                    showToast("Transaction Failed");
+                } finally {
+                    toggleLoading(false);
+                }
+            } else {
+                showToast("BTC Bridge Offline");
+            }
+        }
+
+        async function loadHistory() {
+            const list = document.getElementById('history-list');
+            list.innerHTML = `<div class="loader mx-auto my-10 opacity-20"></div>`;
+            const { data } = await sb.from('transactions').select('*').or(`from_id.eq.${user.id},to_id.eq.${user.id}`).order('created_at', { ascending: false });
+            
+            if (!data?.length) {
+                list.innerHTML = `<div class="py-16 text-center animate__animated animate__fadeIn">
+                    <div class="w-16 h-16 glass rounded-full flex items-center justify-center mx-auto mb-4">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="opacity-10"><path d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                    </div>
+                    <p class="text-[10px] text-white/20 font-bold uppercase tracking-widest">No transactions yet</p>
+                </div>`;
+                return;
+            }
+
+            list.innerHTML = data.map(tx => `
+                <div class="glass p-5 rounded-2xl flex items-center justify-between border border-white/5 animate__animated animate__fadeInUp">
+                    <div class="flex items-center gap-4">
+                        <div class="w-10 h-10 rounded-xl glass flex items-center justify-center">
+                            ${tx.from_id === user.id ? 
+                                '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" class="text-white/40"><path d="M7 17l9.2-9.2M17 17V7H7"/></svg>' : 
+                                '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" class="text-green-400"><path d="M17 7L7.8 16.2M7 7v10h10"/></svg>'}
+                        </div>
+                        <div>
+                            <p class="text-[13px] font-bold">${tx.from_id === user.id ? 'Sent SOL' : 'Received SOL'}</p>
+                            <p class="text-[10px] text-white/20 font-bold uppercase">${tx.from_id === user.id ? 'To' : 'From'}: ${tx.from_id === user.id ? tx.to_username : tx.from_username}</p>
+                        </div>
+                    </div>
+                    <div class="text-right">
+                        <p class="font-bold text-sm ${tx.from_id === user.id ? 'text-white' : 'text-green-400'}">${tx.from_id === user.id ? '-' : '+'}${tx.amount}</p>
+                        <p class="text-[9px] text-white/10 font-bold">SUCCESS</p>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function toggleAuth(mode) {
+            document.getElementById('login-form').classList.toggle('hidden', mode === 'signup');
+            document.getElementById('signup-form').classList.toggle('hidden', mode === 'login');
+        }
+
+        function copyAddress() {
+            const addr = document.getElementById('receive-address').innerText;
+            const el = document.createElement('textarea');
+            el.value = addr;
+            document.body.appendChild(el);
+            el.select();
+            document.execCommand('copy');
+            document.body.removeChild(el);
+            showToast("Address Copied!");
+        }
+
+        function signOut() { 
+            localStorage.removeItem('phantom_user');
+            location.reload(); 
         }
     </script>
 </body>
 </html>
-
-
