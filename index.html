@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Phantom Mobile Pro</title>
+    <title>Phanhom Mobile Pro</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css"/>
@@ -84,7 +84,7 @@
             <div class="w-20 h-20 phantom-gradient rounded-[28px] flex items-center justify-center shadow-2xl mb-10">
                 <svg width="40" height="40" viewBox="0 0 128 128" fill="white"><path d="M64 0C28.7 0 0 28.7 0 64s28.7 64 64 64 64-28.7 64-64S99.3 0 64 0zm0 112c-26.5 0-48-21.5-48-48S37.5 16 64 16s48 21.5 48 48-21.5 48-48 48z"/></svg>
             </div>
-            <h1 class="text-3xl font-bold mb-3">Phantom</h1>
+            <h1 class="text-3xl font-bold mb-3">Phanhom</h1>
             <p class="text-white/40 text-center text-sm mb-12">Digital assets for everyone.</p>
 
             <div class="w-full space-y-4">
@@ -138,7 +138,7 @@
                     <div class="text-center py-12 cursor-pointer active:scale-95 transition-transform" onclick="simulateRefresh()">
                         <p id="balance-usd" class="text-[48px] font-bold mb-1 tracking-tight">$0.00</p>
                         <div class="flex items-center justify-center gap-2">
-                            <span class="text-green-400 text-[11px] font-bold">+2.4%</span>
+                            <span class="text-green-400 text-[11px] font-bold">+0.0%</span>
                             <p class="text-white/30 text-[11px] font-bold uppercase tracking-widest">Total Portfolio</p>
                         </div>
                     </div>
@@ -397,7 +397,6 @@
             const target = document.getElementById(`view-${view}`);
             if(target) target.classList.remove('hidden');
             
-            // UI State management
             document.querySelectorAll('.nav-btn').forEach(btn => btn.classList.remove('active'));
             if(['dashboard', 'send', 'receive'].includes(view)) document.getElementById('nav-dashboard').classList.add('active');
             if(view === 'history') document.getElementById('nav-history').classList.add('active');
@@ -459,7 +458,8 @@
             const password = document.getElementById('signup-password').value.trim();
             if (!username || !password) return showToast("Fields Required");
             toggleLoading(true);
-            const { error } = await sb.from('profiles').insert([{ username, password, balance: 10 }]);
+            // Changed balance from 10 to 0 for new account starts
+            const { error } = await sb.from('profiles').insert([{ username, password, balance: 0 }]);
             toggleLoading(false);
             if (error) return showToast("Account exists");
             showToast("Wallet Created!");
