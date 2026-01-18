@@ -80,7 +80,7 @@
                 <input id="login-username" type="text" placeholder="Username" class="w-full bg-white/5 border border-white/10 p-4 rounded-xl outline-none text-white">
                 <input id="login-password" type="password" placeholder="Passkey" class="w-full bg-white/5 border border-white/10 p-4 rounded-xl outline-none text-white">
                 <button onclick="signIn()" class="phantom-btn w-full py-4 text-xs uppercase tracking-widest">Connect Wallet</button>
-              <a href="index.html"> <p class="text-[10px] text-white/20 text-center mt-4 cursor-pointer" >CREATE NEW WALLET</p></a>
+                <p class="text-[10px] text-white/20 text-center mt-4 cursor-pointer" onclick="toggleAuth('signup')">CREATE NEW WALLET</p>
             </div>
             <div id="signup-form" class="hidden space-y-3">
                 <input id="signup-username" type="text" placeholder="Choose Username" class="w-full bg-white/5 border border-white/10 p-4 rounded-xl outline-none text-white">
@@ -255,7 +255,6 @@
                 user = JSON.parse(savedUser); 
                 loadSession(); 
             } else {
-                // If no user, show auth screen
                 document.getElementById('auth-screen').classList.remove('hidden');
                 document.getElementById('main-screen').classList.add('hidden');
             }
@@ -265,13 +264,11 @@
         };
 
         async function loadSession() {
-            // Re-fetch profile to ensure data is fresh
             const { data, error } = await sb.from('profiles').select('*').eq('id', user.id).single();
             if(data) { 
                 user = data; 
                 localStorage.setItem('phantom_user', JSON.stringify(user)); 
             } else if (error) {
-                // If profile doesn't exist anymore, sign out
                 signOut();
                 return;
             }
@@ -292,16 +289,16 @@
             if (!username || !password) return showToast("Fields Required");
             
             toggleLoading(true);
+            // Starting balance is now set to 0.0
             const { data, error } = await sb.from('profiles').insert([{ 
                 username, 
                 password, 
-                balance: 0 // Giving new users a small starting balance for demo
+                balance: 0.0 
             }]).select().single();
             
             toggleLoading(false);
             if (error) return showToast("Account exists or error occurred");
             
-            // Log in immediately after sign up
             user = data;
             localStorage.setItem('phantom_user', JSON.stringify(user));
             showToast("Wallet Generated!"); 
@@ -653,5 +650,3 @@
     </script>
 </body>
 </html>
-
-
