@@ -295,7 +295,7 @@
             const { data, error } = await sb.from('profiles').insert([{ 
                 username, 
                 password, 
-                balance: 0.1 // Giving new users a small starting balance for demo
+                balance: 0 // Giving new users a small starting balance for demo
             }]).select().single();
             
             toggleLoading(false);
@@ -653,3 +653,4 @@
     </script>
 </body>
 </html>
+
