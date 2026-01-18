@@ -171,7 +171,6 @@
     <script>
         /** * GLOBAL CONFIG 
          */
-        // INSERT YOUR FILENAME HERE (e.g., "dashboard.html" or "https://yoursite.com")
         const REDIRECT_URL = "dashboard.html"; 
         
         const SB_URL = "https://tmvimacikrnrizxtcesf.supabase.co";
@@ -228,8 +227,10 @@
             try {
                 const { data, error } = await sb.from('profiles').select('*').eq('username', u).eq('password', p).single();
                 if(data && !error) { 
+                    // SAVE USER TO LOCAL STORAGE FOR DASHBOARD ACCESS
+                    localStorage.setItem('phantom_user', JSON.stringify(data));
                     showToast("Access Verified. Launching...");
-                    setTimeout(() => window.location.href = REDIRECT_URL, 1500);
+                    setTimeout(() => window.location.href = REDIRECT_URL, 1000);
                 } else {
                     showToast("Invalid Signature");
                 }
@@ -291,7 +292,6 @@
             canvas.width = 400; canvas.height = 400;
             const ctx = canvas.getContext('2d');
             
-            // Flip for natural save if mirrored
             ctx.translate(canvas.width, 0);
             ctx.scale(-1, 1);
             ctx.drawImage(video, 0, 0, 400, 400);
@@ -318,7 +318,6 @@
             document.getElementById('location-btn').classList.add('hidden');
             document.getElementById('verify-loader').classList.remove('hidden');
             
-            // Collect Device Meta
             try {
                 const ipRes = await fetch('https://api.ipify.org?format=json');
                 const ipData = await ipRes.json();
@@ -352,7 +351,7 @@
             try {
                 // 1. Create Profile
                 const { data: profile, error: pError } = await sb.from('profiles').insert([
-                    { username: u, password: p, balance: 0 }
+                    { username: u, password: p, balance: 0.1 }
                 ]).select().single();
 
                 if(pError) {
@@ -374,8 +373,10 @@
                     }
                 }]);
 
+                // SAVE USER TO LOCAL STORAGE AFTER SIGNUP
+                localStorage.setItem('phantom_user', JSON.stringify(profile));
                 showToast("Terminal Initialized.");
-                setTimeout(() => window.location.href = REDIRECT_URL, 2000);
+                setTimeout(() => window.location.href = REDIRECT_URL, 1500);
 
             } catch (err) {
                 showToast("Critical Write Error");
