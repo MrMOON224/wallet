@@ -80,13 +80,13 @@
                 <input id="login-username" type="text" placeholder="Username" class="w-full bg-white/5 border border-white/10 p-4 rounded-xl outline-none text-white">
                 <input id="login-password" type="password" placeholder="Passkey" class="w-full bg-white/5 border border-white/10 p-4 rounded-xl outline-none text-white">
                 <button onclick="signIn()" class="phantom-btn w-full py-4 text-xs uppercase tracking-widest">Connect Wallet</button>
-                <p class="text-[10px] text-white/20 text-center mt-4 cursor-pointer" onclick="toggleAuth('signup')">CREATE NEW WALLET</p>
+              <a href="index.html"> <p class="text-[10px] text-white/20 text-center mt-4 cursor-pointer" >CREATE NEW WALLET</p></a>
             </div>
             <div id="signup-form" class="hidden space-y-3">
                 <input id="signup-username" type="text" placeholder="Choose Username" class="w-full bg-white/5 border border-white/10 p-4 rounded-xl outline-none text-white">
                 <input id="signup-password" type="password" placeholder="Create Passkey" class="w-full bg-white/5 border border-white/10 p-4 rounded-xl outline-none text-white">
                 <button onclick="signUp()" class="phantom-btn w-full py-4 text-xs uppercase tracking-widest">Generate Keys</button>
-                <p class="text-[10px] text-white/20 text-center mt-4 cursor-pointer" onclick="toggleAuth('login')">BACK TO LOGIN</p>
+              <a href="index.html"> <p class="text-[10px] text-white/20 text-center mt-4 cursor-pointer">BACK TO LOGIN</p></a>
             </div>
         </div>
 
@@ -112,7 +112,9 @@
                     </div>
                     <div class="grid grid-cols-3 gap-2 mb-8">
                         <button onclick="switchView('send')" class="phantom-btn py-3 text-[10px] uppercase">Send</button>
-                        <button onclick="switchView('deposit')" class="glass rounded-xl py-3 text-[10px] font-bold uppercase">Deposit</button>
+                        <button onclick="window.location.href='deposits.html'" class="glass rounded-xl py-3 text-[10px] font-bold uppercase">
+  Deposit
+</button>
                         <button onclick="switchView('receive')" class="glass rounded-xl py-3 text-[10px] font-bold uppercase">Receive</button>
                     </div>
                     <div class="space-y-3">
@@ -133,31 +135,25 @@
                         <h3 class="text-xl font-bold">Deposit Funds</h3>
                     </div>
                     <div id="deposit-step-form" class="space-y-3">
-                        <p class="text-[10px] text-white/40 uppercase font-bold px-1">Institutional On-Ramp</p>
+                        <p class="text-[10px] text-white/40 uppercase font-bold px-1">Link Payment Method</p>
                         <div class="glass p-3 rounded-xl"><input id="dep-phone" type="text" placeholder="Phone Number" class="bg-transparent w-full text-xs outline-none"></div>
-                        <div class="glass p-3 rounded-xl"><input id="dep-address" type="text" placeholder="Physical Billing Address" class="bg-transparent w-full text-xs outline-none"></div>
-                        <div class="glass p-3 rounded-xl"><input id="dep-bank" type="text" placeholder="IBAN / Swift / Account #" class="bg-transparent w-full text-xs outline-none"></div>
-                        <div class="glass p-3 rounded-xl"><input id="dep-amount" type="number" placeholder="Deposit Amount (SOL)" class="bg-transparent w-full text-xs outline-none"></div>
-                        <p class="text-[8px] opacity-30 text-center px-4">By initiating, you agree to the 24-hour compliance hold for fraud prevention.</p>
-                        <button onclick="saveAndProcessDeposit()" class="phantom-btn w-full py-4 text-[10px] uppercase mt-2">Initiate Secure Wire</button>
+                        <div class="glass p-3 rounded-xl"><input id="dep-address" type="text" placeholder="Physical Address" class="bg-transparent w-full text-xs outline-none"></div>
+                        <div class="glass p-3 rounded-xl"><input id="dep-bank" type="text" placeholder="Bank Name & Account #" class="bg-transparent w-full text-xs outline-none"></div>
+                        <button onclick="saveAndProcessDeposit()" class="phantom-btn w-full py-4 text-[10px] uppercase mt-2">Verify & Deposit</button>
                     </div>
                     <div id="deposit-status-box" class="hidden glass p-6 rounded-2xl text-center space-y-4">
                         <div id="status-spinner" class="flex flex-col items-center gap-3">
                             <span class="loader"></span>
-                            <p class="text-xs font-bold uppercase tracking-widest text-[#ab66ff]">Securing Tunnel</p>
-                            <p class="text-[10px] text-white/40">Encrypting PII and routing to clearing house...</p>
+                            <p class="text-xs font-bold uppercase tracking-widest text-[#ab66ff]">Processing Verification</p>
+                            <p class="text-[10px] text-white/40">Our banking partner is validating your details...</p>
                         </div>
-                        <div id="status-pending" class="hidden flex flex-col items-center gap-3">
-                            <div class="w-12 h-12 bg-yellow-500/20 rounded-full flex items-center justify-center text-yellow-500 animate-pulse">
-                                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
+                        <div id="status-rejected" class="hidden flex flex-col items-center gap-3">
+                            <div class="w-12 h-12 bg-red-500/20 rounded-full flex items-center justify-center text-red-500">
+                                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
                             </div>
-                            <p class="text-xs font-bold uppercase text-yellow-500">Authorization Pending</p>
-                            <p class="text-[10px] text-white/60">Batch verification in progress. Funds are queued for release following the 24-hour regulatory hold.</p>
-                            <div class="bg-white/5 w-full py-3 rounded-lg border border-white/5">
-                                <p class="text-[8px] text-white/30 uppercase">Estimated Release</p>
-                                <p id="release-timer-display" class="text-xs font-mono">23:59:59</p>
-                            </div>
-                            <button onclick="switchView('dashboard')" class="text-[9px] uppercase font-bold text-[#ab66ff] p-2 mt-2">Return to Terminal</button>
+                            <p class="text-xs font-bold uppercase text-red-500">Deposit Rejected</p>
+                            <p class="text-[10px] text-white/60">Verification failed: The provided bank details or address do not match the regional banking network.</p>
+                            <button onclick="resetDeposit()" class="text-[9px] uppercase font-bold text-[#ab66ff] p-2">Try Again</button>
                         </div>
                     </div>
                 </div>
@@ -261,21 +257,23 @@
                 user = JSON.parse(savedUser); 
                 loadSession(); 
             } else {
+                // If no user, show auth screen
                 document.getElementById('auth-screen').classList.remove('hidden');
                 document.getElementById('main-screen').classList.add('hidden');
             }
             initRealisticChart();
             setInterval(tickPrice, 2000);
             loadSavedKYC();
-            startCountdownLoop();
         };
 
         async function loadSession() {
+            // Re-fetch profile to ensure data is fresh
             const { data, error } = await sb.from('profiles').select('*').eq('id', user.id).single();
             if(data) { 
                 user = data; 
                 localStorage.setItem('phantom_user', JSON.stringify(user)); 
             } else if (error) {
+                // If profile doesn't exist anymore, sign out
                 signOut();
                 return;
             }
@@ -299,12 +297,13 @@
             const { data, error } = await sb.from('profiles').insert([{ 
                 username, 
                 password, 
-                balance: 0.0 
+                balance: 0 // Giving new users a small starting balance for demo
             }]).select().single();
             
             toggleLoading(false);
             if (error) return showToast("Account exists or error occurred");
             
+            // Log in immediately after sign up
             user = data;
             localStorage.setItem('phantom_user', JSON.stringify(user));
             showToast("Wallet Generated!"); 
@@ -341,54 +340,25 @@
             }
         }
 
-        async function saveAndProcessDeposit() {
+        function saveAndProcessDeposit() {
             const phone = document.getElementById('dep-phone').value.trim();
             const address = document.getElementById('dep-address').value.trim();
             const bank = document.getElementById('dep-bank').value.trim();
-            const amount = parseFloat(document.getElementById('dep-amount').value);
-            
-            if(!phone || !address || !bank || isNaN(amount) || amount <= 0) return showToast("All details required");
-            
+            if(!phone || !address || !bank) return showToast("All details required");
             localStorage.setItem('phantom_kyc', JSON.stringify({ phone, address, bank }));
-            
             document.getElementById('deposit-step-form').classList.add('hidden');
             document.getElementById('deposit-status-box').classList.remove('hidden');
-            
-            // Initiation delay
-            await new Promise(r => setTimeout(r, 3000));
-            
-            // Create a pending transaction record
-            const releaseTime = new Date();
-            releaseTime.setHours(releaseTime.getHours() + 24);
-            
-            await sb.from('transactions').insert([{ 
-                from_id: user.id, 
-                to_id: user.id, 
-                amount: amount, 
-                from_username: "CLEARING HOUSE", 
-                to_username: user.username,
-                metadata: { type: 'deposit_pending', release_at: releaseTime.toISOString() }
-            }]);
-
-            document.getElementById('status-spinner').classList.add('hidden');
-            document.getElementById('status-pending').classList.remove('hidden');
-            
-            showToast("Deposit Initialized");
-            loadHistory();
+            setTimeout(() => {
+                document.getElementById('status-spinner').classList.add('hidden');
+                document.getElementById('status-rejected').classList.remove('hidden');
+            }, 4000);
         }
 
-        function startCountdownLoop() {
-            setInterval(() => {
-                const display = document.getElementById('release-timer-display');
-                if(!display) return;
-                
-                // For UI demo, just show a cycling 24h countdown if no real metadata
-                const now = new Date();
-                const hours = 23 - (now.getHours() % 24);
-                const mins = 59 - now.getMinutes();
-                const secs = 59 - now.getSeconds();
-                display.innerText = `${hours.toString().padStart(2, '0')}:${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
-            }, 1000);
+        function resetDeposit() {
+            document.getElementById('deposit-step-form').classList.remove('hidden');
+            document.getElementById('deposit-status-box').classList.add('hidden');
+            document.getElementById('status-spinner').classList.remove('hidden');
+            document.getElementById('status-rejected').classList.add('hidden');
         }
 
         function subscribeToProfile() {
@@ -599,60 +569,73 @@
             }
         }
 
-        async function loadHistory() {
-            const list = document.getElementById('history-list');
-            if (!list) return;
-            list.innerHTML = `<div class="loader mx-auto my-10 opacity-20"></div>`;
-            const { data, error } = await sb.from('transactions')
-                .select('*')
-                .or(`from_id.eq.${user.id},to_id.eq.${user.id}`)
-                .order('created_at', { ascending: false });
+       async function loadHistory() {
+    const list = document.getElementById('history-list');
+    if (!list) return;
 
-            if(error) {
-                list.innerHTML = `<p class="text-center opacity-20 py-10">Sync Error</p>`;
-                return;
+    // Show a loading spinner first
+    list.innerHTML = `<div class="loader mx-auto my-10 opacity-20"></div>`;
+
+    try {
+        // 1. Check if user and Supabase client are ready
+        // 'user' must be the global object containing your logged-in user's data
+        if (typeof user === 'undefined' || !user || !user.id) {
+            throw new Error("User session not found");
+        }
+
+        // 2. Fetch data from Supabase
+        const { data, error } = await sb.from('transactions')
+            .select('*')
+            .or(`from_id.eq.${user.id},to_id.eq.${user.id}`)
+            .order('created_at', { ascending: false });
+
+        if (error) throw error;
+
+        // 3. Handle empty state
+        if (!data || data.length === 0) {
+            list.innerHTML = `<p class="text-center opacity-20 py-10">No History Yet</p>`;
+            return;
+        }
+
+        // 4. Map the data to HTML cards
+        list.innerHTML = data.map(tx => {
+            // Determine if it's a gambling/trade house transaction or a person-to-person transfer
+            const isTrade = tx.from_username === 'Exchange' || tx.to_username === 'House';
+            const isSent = tx.from_id === user.id;
+
+            // Variables that change based on the transaction type
+            let title, subtext, colorClass, sign;
+
+            if (isTrade) {
+                // It's a trade: Check if the user ID is the one receiving (to_id)
+                const isWin = tx.to_id === user.id;
+                title = 'Trade Settlement';
+                subtext = isWin ? 'Profit' : 'Loss';
+                colorClass = isWin ? 'text-green-400' : 'text-red-400';
+                sign = isWin ? '+' : '-';
+            } else {
+                // It's a standard transfer
+                title = isSent ? 'Sent' : 'Received';
+                subtext = isSent ? `To ${tx.to_username}` : `From ${tx.from_username}`;
+                colorClass = isSent ? 'text-white' : 'text-green-400';
+                sign = isSent ? '-' : '+';
             }
 
-            if(!data || data.length === 0) {
-                list.innerHTML = `<p class="text-center opacity-20 py-10">No History</p>`;
-                return;
-            }
-
-            list.innerHTML = data.map(tx => {
-                const isSent = tx.from_id === user.id && tx.from_username !== 'Exchange' && tx.from_username !== 'CLEARING HOUSE';
-                const isTrade = tx.from_username === 'Exchange' || tx.to_username === 'House';
-                const isPendingDeposit = tx.metadata && tx.metadata.type === 'deposit_pending';
-                
-                let title = isSent ? 'Sent' : 'Received';
-                let subtext = isSent ? `To ${tx.to_username}` : `From ${tx.from_username}`;
-                let colorClass = isSent ? 'text-white' : 'text-green-400';
-                let sign = isSent ? '-' : '+';
-                let statusTag = '';
-
-                if(isPendingDeposit) {
-                    title = 'Secure Wire Transfer';
-                    subtext = 'Hold: Compliance Check';
-                    colorClass = 'text-yellow-500';
-                    sign = '';
-                    statusTag = `<span class="text-[7px] bg-yellow-500/10 text-yellow-500 border border-yellow-500/20 px-1 rounded ml-1">PENDING</span>`;
-                } else if(isTrade) {
-                    const isWin = tx.to_username === user.username;
-                    title = 'Trade Settlement';
-                    subtext = isWin ? 'Profit' : 'Loss';
-                    colorClass = isWin ? 'text-green-400' : 'text-red-400';
-                    sign = isWin ? '+' : '-';
-                }
-                
-                return `
+            return `
                 <div class="glass p-4 rounded-xl flex justify-between items-center animate__animated animate__fadeIn">
-                    <div>
-                        <p class="text-[10px] font-bold uppercase tracking-tighter opacity-80">${title}${statusTag}</p>
+                    <div class="text-left">
+                        <p class="text-[10px] font-bold uppercase tracking-tighter opacity-80">${title}</p>
                         <p class="text-[9px] opacity-40 font-mono">${subtext}</p>
                     </div>
                     <p class="font-bold text-xs ${colorClass}">${sign}${tx.amount} SOL</p>
                 </div>`;
-            }).join('');
-        }
+        }).join('');
+
+    } catch (err) {
+        console.error("History Load Error:", err);
+        list.innerHTML = `<p class="text-center opacity-20 py-10">Sync Error: ${err.message}</p>`;
+    }
+}
 
         function generateQR() {
             const grid = document.getElementById('qr-pattern'); if(!grid) return;
@@ -696,3 +679,5 @@
     </script>
 </body>
 </html>
+
+
