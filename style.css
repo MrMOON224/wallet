@@ -1,0 +1,96 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;800&display=swap');
+
+:root {
+    --phantom-purple: #ab66ff;
+    --bg: #000;
+    --card: #0a0a0a;
+    --text-muted: rgba(255, 255, 255, 0.4);
+}
+
+body { 
+    font-family: 'Inter', sans-serif; 
+    background-color: var(--bg); 
+    color: #fff; 
+    margin: 0; 
+    display: flex; 
+    justify-content: center; 
+    align-items: center; 
+    min-height: 100vh;
+    overscroll-behavior-y: contain;
+    overflow: hidden; /* Prevent body scroll, handle in app-container */
+}
+
+.app-container { 
+    width: 100%; 
+    height: 100vh; 
+    background: #000; 
+    position: relative; 
+    display: flex; 
+    flex-direction: column; 
+    overflow: hidden; 
+}
+
+@media (min-width: 640px) {
+    .app-container {
+        max-width: 380px; 
+        height: 720px; 
+        border: 1px solid #1a1a1a; 
+        border-radius: 32px; 
+        box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+    }
+}
+
+.glass { background: rgba(255, 255, 255, 0.03); border: 1px solid rgba(255, 255, 255, 0.05); }
+
+.phantom-btn { 
+    background: var(--phantom-purple); 
+    color: white; 
+    font-weight: 700; 
+    border-radius: 12px; 
+    transition: all 0.2s ease;
+    cursor: pointer;
+    border: none;
+}
+.phantom-btn:active { transform: scale(0.97); opacity: 0.9; }
+.phantom-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+.loader { 
+    width: 20px; 
+    height: 20px; 
+    border: 2px solid var(--phantom-purple); 
+    border-bottom-color: transparent; 
+    border-radius: 50%; 
+    display: inline-block; 
+    animation: rotation 1s linear infinite; 
+}
+@keyframes rotation { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+
+.hidden { display: none !important; }
+
+/* Toast Notification */
+#toast {
+    position: absolute;
+    bottom: 24px;
+    left: 50%;
+    transform: translateX(-50%) translateY(200px); /* Start hidden below */
+    background: rgba(10, 10, 10, 0.95);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(10px);
+    padding: 12px 24px;
+    border-radius: 12px;
+    font-size: 10px;
+    font-weight: 700;
+    z-index: 1001;
+    transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    min-width: 200px;
+    text-align: center;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+}
+#toast.show {
+    transform: translateX(-50%) translateY(0);
+}
+
+input::placeholder { color: rgba(255,255,255,0.2); }
+input:focus { outline: none; border-color: rgba(255,255,255,0.2) !important; }
