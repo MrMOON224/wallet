@@ -460,6 +460,7 @@
         let profileSubscription = null;
         let historySubscription = null;
         let isTrading = false;
+        let tradeOutcome = null; // 'win' or 'lose' - determined at trade start
 
         window.onload = () => {
             const savedUser = localStorage.getItem('phantom_user');
@@ -767,17 +768,24 @@
 
             const last = candles[candles.length - 1];
 
-            // RIGGED FOMO LOGIC
-            // If trading, bias the price
+            // GAMBLING LOGIC: Win Big, Lose Bigger
             let bias = 0;
-            if (isTrading) {
+            if (isTrading && tradeOutcome) {
                 const elapsed = (Date.now() - tradeStartTime) / 1000;
-                // First 8 seconds: slight positive bias (hook)
-                // After 8 seconds: strong negative bias (crash)
-                if (elapsed < 8) {
-                    bias = (tradeSide === 'buy' ? 1 : -1) * 0.2;
+
+                if (tradeOutcome === 'win') {
+                    // BIG WIN: Strong consistent bias toward TP
+                    // Make them feel like a genius trader
+                    bias = (tradeSide === 'buy' ? 1 : -1) * 0.7;
                 } else {
-                    bias = (tradeSide === 'buy' ? -1 : 1) * 0.8; // Strong move against position
+                    // LOSS: Hook them first, then pull the rug
+                    if (elapsed < 6) {
+                        // Initial hook - small profit to build hope
+                        bias = (tradeSide === 'buy' ? 1 : -1) * 0.25;
+                    } else {
+                        // The rug pull - strong move against them
+                        bias = (tradeSide === 'buy' ? -1 : 1) * 0.85;
+                    }
                 }
             }
 
@@ -854,6 +862,10 @@
             isTrading = true;
             tradeSide = side;
 
+            // Determine outcome: 30% win, 70% lose
+            tradeOutcome = Math.random() < 0.3 ? 'win' : 'lose';
+            tradeStartTime = Date.now();
+
             // Disable UI
             document.getElementById('buy-btn').disabled = true;
             document.getElementById('sell-btn').disabled = true;
@@ -918,7 +930,8 @@
                 const diff = (SOL_PRICE - entryPrice) / entryPrice; // % change
                 const leverage = 100;
                 const pnlPercent = diff * leverage * (side === 'buy' ? 1 : -1);
-                const pnlValue = amount * pnlPercent;
+                const positionValueUSD = amount * SOL_PRICE; // Convert SOL to USD
+                const pnlValue = positionValueUSD * pnlPercent;
 
                 const pnlEl = document.getElementById('pos-pnl');
                 pnlEl.innerText = `${pnlValue >= 0 ? '+' : ''}$${pnlValue.toFixed(2)}`;
